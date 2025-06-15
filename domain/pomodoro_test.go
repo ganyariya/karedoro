@@ -55,8 +55,8 @@ func TestPomodoroManager_NewPomodoroManager(t *testing.T) {
 	
 	manager := NewPomodoroManager(config, handler)
 	
-	if manager.GetCurrentState() != Idle {
-		t.Errorf("Expected initial state to be Idle, got %v", manager.GetCurrentState())
+	if manager.GetCurrentState() != SessionStateIdle {
+		t.Errorf("Expected initial state to be SessionStateIdle, got %v", manager.GetCurrentState())
 	}
 	
 	if manager.GetCurrentSession() != nil {
@@ -74,8 +74,8 @@ func TestPomodoroManager_StartWorkSession(t *testing.T) {
 		t.Errorf("Expected no error, got %v", err)
 	}
 	
-	if manager.GetCurrentState() != WorkSession {
-		t.Errorf("Expected state to be WorkSession, got %v", manager.GetCurrentState())
+	if manager.GetCurrentState() != SessionStateWork {
+		t.Errorf("Expected state to be SessionStateWork, got %v", manager.GetCurrentState())
 	}
 	
 	if !handler.SessionStartCalled {
@@ -87,8 +87,8 @@ func TestPomodoroManager_StartWorkSession(t *testing.T) {
 		t.Error("Expected current session to not be nil")
 	}
 	
-	if session.State != WorkSession {
-		t.Errorf("Expected session state to be WorkSession, got %v", session.State)
+	if session.State != SessionStateWork {
+		t.Errorf("Expected session state to be SessionStateWork, got %v", session.State)
 	}
 }
 
@@ -102,8 +102,8 @@ func TestPomodoroManager_StartBreakSession(t *testing.T) {
 		t.Errorf("Expected no error, got %v", err)
 	}
 	
-	if manager.GetCurrentState() != BreakSession {
-		t.Errorf("Expected state to be BreakSession, got %v", manager.GetCurrentState())
+	if manager.GetCurrentState() != SessionStateBreak {
+		t.Errorf("Expected state to be SessionStateBreak, got %v", manager.GetCurrentState())
 	}
 	
 	if !handler.SessionStartCalled {
@@ -115,8 +115,8 @@ func TestPomodoroManager_StartBreakSession(t *testing.T) {
 		t.Error("Expected current session to not be nil")
 	}
 	
-	if session.State != BreakSession {
-		t.Errorf("Expected session state to be BreakSession, got %v", session.State)
+	if session.State != SessionStateBreak {
+		t.Errorf("Expected session state to be SessionStateBreak, got %v", session.State)
 	}
 }
 
@@ -195,8 +195,8 @@ func TestPomodoroManager_SessionExpiration(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	
 	// Session should be expired and state should be Idle
-	if manager.GetCurrentState() != Idle {
-		t.Errorf("Expected state to be Idle after session expiry, got %v", manager.GetCurrentState())
+	if manager.GetCurrentState() != SessionStateIdle {
+		t.Errorf("Expected state to be SessionStateIdle after session expiry, got %v", manager.GetCurrentState())
 	}
 	
 	if !handler.SessionEndCalled {

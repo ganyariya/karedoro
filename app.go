@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"karedoro/config"
 	"karedoro/domain"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -103,7 +104,7 @@ func (a *App) GetRemainingTime() int {
 
 // OnSessionStart handles session start events
 func (a *App) OnSessionStart(session *domain.Session) {
-	runtime.EventsEmit(a.ctx, "session:start", map[string]interface{}{
+	runtime.EventsEmit(a.ctx, config.EventSessionStart, map[string]interface{}{
 		"state":    session.State.String(),
 		"duration": int(session.Duration.Seconds()),
 	})
@@ -111,7 +112,7 @@ func (a *App) OnSessionStart(session *domain.Session) {
 
 // OnSessionEnd handles session end events
 func (a *App) OnSessionEnd(session *domain.Session) {
-	runtime.EventsEmit(a.ctx, "session:end", map[string]interface{}{
+	runtime.EventsEmit(a.ctx, config.EventSessionEnd, map[string]interface{}{
 		"state": session.State.String(),
 	})
 	
@@ -126,7 +127,7 @@ func (a *App) OnSessionEnd(session *domain.Session) {
 
 // OnSessionPause handles session pause events
 func (a *App) OnSessionPause(session *domain.Session) {
-	runtime.EventsEmit(a.ctx, "session:pause", map[string]interface{}{
+	runtime.EventsEmit(a.ctx, config.EventSessionPause, map[string]interface{}{
 		"state":         session.State.String(),
 		"remainingTime": int(session.GetRemainingTime().Seconds()),
 	})
@@ -134,7 +135,7 @@ func (a *App) OnSessionPause(session *domain.Session) {
 
 // OnSessionResume handles session resume events
 func (a *App) OnSessionResume(session *domain.Session) {
-	runtime.EventsEmit(a.ctx, "session:resume", map[string]interface{}{
+	runtime.EventsEmit(a.ctx, config.EventSessionResume, map[string]interface{}{
 		"state":         session.State.String(),
 		"remainingTime": int(session.GetRemainingTime().Seconds()),
 	})
@@ -142,7 +143,7 @@ func (a *App) OnSessionResume(session *domain.Session) {
 
 // OnTimerTick handles timer tick events
 func (a *App) OnTimerTick(session *domain.Session, remainingTime time.Duration) {
-	runtime.EventsEmit(a.ctx, "timer:tick", map[string]interface{}{
+	runtime.EventsEmit(a.ctx, config.EventTimerTick, map[string]interface{}{
 		"state":         session.State.String(),
 		"remainingTime": int(remainingTime.Seconds()),
 	})
@@ -150,14 +151,14 @@ func (a *App) OnTimerTick(session *domain.Session, remainingTime time.Duration) 
 
 // OnWarning handles warning events
 func (a *App) OnWarning(idleDuration time.Duration) {
-	runtime.EventsEmit(a.ctx, "warning", map[string]interface{}{
+	runtime.EventsEmit(a.ctx, config.EventWarning, map[string]interface{}{
 		"idleDuration": int(idleDuration.Minutes()),
 	})
 	
 	// Show notification
 	runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 		Type:    runtime.InfoDialog,
-		Title:   "Karedoro",
-		Message: "まだ次のセッションを開始していません！",
+		Title:   config.AppName,
+		Message: config.MessageWarningIdle,
 	})
 }

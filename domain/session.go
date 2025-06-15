@@ -2,27 +2,38 @@ package domain
 
 import (
 	"time"
+	
+	"karedoro/config"
 )
 
 // SessionState represents the current state of the pomodoro application
 type SessionState int
 
+// Session state enumeration
 const (
-	Idle SessionState = iota
-	WorkSession
-	BreakSession
+	SessionStateIdle SessionState = iota
+	SessionStateWork
+	SessionStateBreak
+)
+
+// Session state string constants
+const (
+	SessionStateIdleString  = "Idle"
+	SessionStateWorkString  = "WorkSession"
+	SessionStateBreakString = "BreakSession"
+	SessionStateUnknownString = "Unknown"
 )
 
 func (s SessionState) String() string {
 	switch s {
-	case Idle:
-		return "Idle"
-	case WorkSession:
-		return "WorkSession"
-	case BreakSession:
-		return "BreakSession"
+	case SessionStateIdle:
+		return SessionStateIdleString
+	case SessionStateWork:
+		return SessionStateWorkString
+	case SessionStateBreak:
+		return SessionStateBreakString
 	default:
-		return "Unknown"
+		return SessionStateUnknownString
 	}
 }
 
@@ -35,8 +46,8 @@ type SessionConfig struct {
 // NewDefaultConfig creates a new SessionConfig with default values
 func NewDefaultConfig() *SessionConfig {
 	return &SessionConfig{
-		WorkDuration:  25 * time.Minute,
-		BreakDuration: 5 * time.Minute,
+		WorkDuration:  config.DefaultWorkDuration,
+		BreakDuration: config.DefaultBreakDuration,
 	}
 }
 
@@ -53,7 +64,7 @@ type Session struct {
 // NewWorkSession creates a new work session
 func NewWorkSession(config *SessionConfig) *Session {
 	return &Session{
-		State:     WorkSession,
+		State:     SessionStateWork,
 		StartTime: time.Now(),
 		Duration:  config.WorkDuration,
 		IsPaused:  false,
@@ -63,7 +74,7 @@ func NewWorkSession(config *SessionConfig) *Session {
 // NewBreakSession creates a new break session
 func NewBreakSession(config *SessionConfig) *Session {
 	return &Session{
-		State:     BreakSession,
+		State:     SessionStateBreak,
 		StartTime: time.Now(),
 		Duration:  config.BreakDuration,
 		IsPaused:  false,

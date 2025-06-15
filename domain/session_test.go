@@ -6,14 +6,14 @@ import (
 )
 
 func TestSessionConfig_NewDefaultConfig(t *testing.T) {
-	config := NewDefaultConfig()
+	cfg := NewDefaultConfig()
 	
-	if config.WorkDuration != 25*time.Minute {
-		t.Errorf("Expected work duration to be 25 minutes, got %v", config.WorkDuration)
+	if cfg.WorkDuration != 25*time.Minute {
+		t.Errorf("Expected work duration to be 25 minutes, got %v", cfg.WorkDuration)
 	}
 	
-	if config.BreakDuration != 5*time.Minute {
-		t.Errorf("Expected break duration to be 5 minutes, got %v", config.BreakDuration)
+	if cfg.BreakDuration != 5*time.Minute {
+		t.Errorf("Expected break duration to be 5 minutes, got %v", cfg.BreakDuration)
 	}
 }
 
@@ -21,8 +21,8 @@ func TestSession_NewWorkSession(t *testing.T) {
 	config := NewDefaultConfig()
 	session := NewWorkSession(config)
 	
-	if session.State != WorkSession {
-		t.Errorf("Expected state to be WorkSession, got %v", session.State)
+	if session.State != SessionStateWork {
+		t.Errorf("Expected state to be SessionStateWork, got %v", session.State)
 	}
 	
 	if session.Duration != config.WorkDuration {
@@ -38,8 +38,8 @@ func TestSession_NewBreakSession(t *testing.T) {
 	config := NewDefaultConfig()
 	session := NewBreakSession(config)
 	
-	if session.State != BreakSession {
-		t.Errorf("Expected state to be BreakSession, got %v", session.State)
+	if session.State != SessionStateBreak {
+		t.Errorf("Expected state to be SessionStateBreak, got %v", session.State)
 	}
 	
 	if session.Duration != config.BreakDuration {
@@ -119,9 +119,9 @@ func TestSessionState_String(t *testing.T) {
 		state    SessionState
 		expected string
 	}{
-		{Idle, "Idle"},
-		{WorkSession, "WorkSession"},
-		{BreakSession, "BreakSession"},
+		{SessionStateIdle, "Idle"},
+		{SessionStateWork, "WorkSession"},
+		{SessionStateBreak, "BreakSession"},
 	}
 	
 	for _, test := range tests {

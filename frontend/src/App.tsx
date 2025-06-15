@@ -3,35 +3,38 @@ import logo from './assets/images/logo-universal.png';
 import './App.css';
 import {StartWorkSession, StartBreakSession, PauseSession, ResumeSession, GetCurrentState, GetRemainingTime} from "../wailsjs/go/main/App";
 import {EventsOn} from "../wailsjs/runtime/runtime";
+import { APP_CONSTANTS, BUTTON_LABELS } from './constants/app';
+import { EVENTS } from './constants/events';
+import { SESSION_STATE, SessionStateType, isIdleState, isWorkSession, isBreakSession } from './types/session';
 
 function App() {
-    const [currentState, setCurrentState] = useState("Idle");
+    const [currentState, setCurrentState] = useState<SessionStateType>(SESSION_STATE.IDLE);
     const [remainingTime, setRemainingTime] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
 
     useEffect(() => {
         // Listen for session events
-        EventsOn("session:start", (data: any) => {
-            setCurrentState(data.state);
+        EventsOn(EVENTS.SESSION_START, (data: any) => {
+            setCurrentState(data.state as SessionStateType);
         });
 
-        EventsOn("session:end", (data: any) => {
-            setCurrentState("Idle");
+        EventsOn(EVENTS.SESSION_END, (data: any) => {
+            setCurrentState(SESSION_STATE.IDLE);
         });
 
-        EventsOn("session:pause", (data: any) => {
+        EventsOn(EVENTS.SESSION_PAUSE, (data: any) => {
             setIsPaused(true);
         });
 
-        EventsOn("session:resume", (data: any) => {
+        EventsOn(EVENTS.SESSION_RESUME, (data: any) => {
             setIsPaused(false);
         });
 
-        EventsOn("timer:tick", (data: any) => {
+        EventsOn(EVENTS.TIMER_TICK, (data: any) => {
             setRemainingTime(data.remainingTime);
         });
 
-        EventsOn("warning", (data: any) => {
+        EventsOn(EVENTS.WARNING, (data: any) => {
             console.log("Warning: Idle for", data.idleDuration, "minutes");
         });
 
@@ -39,9 +42,9 @@ function App() {
         const interval = setInterval(async () => {
             const state = await GetCurrentState();
             const time = await GetRemainingTime();
-            setCurrentState(state);
+            setCurrentState(state as SessionStateType);
             setRemainingTime(time);
-        }, 1000);
+        }, APP_CONSTANTS.TIMER_UPDATE_INTERVAL);
 
         return () => clearInterval(interval);
     }, []);
@@ -72,23 +75,23 @@ function App() {
         <div id="App">
             <img src={logo} id="logo" alt="logo"/>
             <div id="result" className="result">
-                <h1>Karedoro ポモドーロタイマー</h1>
+                <h1>{APP_CONSTANTS.TITLE}</h1>
                 <p>現在の状態: {currentState}</p>
                 <p>残り時間: {formatTime(remainingTime)}</p>
             </div>
             <div id="input" className="input-box">
-                {currentState === "Idle" && (
+                {isIdleState(currentState) && (
                     <>
-                        <button className="btn" onClick={handleStartWork}>作業セッション開始</button>
-                        <button className="btn" onClick={handleStartBreak}>休憩セッション開始</button>
+                        <button className="btn" onClick={handleStartWork}>{BUTTON_LABELS.START_WORK}</button>
+                        <button className="btn" onClick={handleStartBreak}>{BUTTON_LABELS.START_BREAK}</button>
                     </>
                 )}
-                {currentState !== "Idle" && (
+                {!isIdleState(currentState) && (
                     <>
                         {isPaused ? (
-                            <button className="btn" onClick={handleResume}>再開</button>
+                            <button className="btn" onClick={handleResume}>{BUTTON_LABELS.RESUME}</button>
                         ) : (
-                            <button className="btn" onClick={handlePause}>一時停止</button>
+                            <button className="btn" onClick={handlePause}>{BUTTON_LABELS.PAUSE}</button>
                         )}
                     </>
                 )}

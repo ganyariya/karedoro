@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+	
+	"karedoro/config"
 )
 
 // PomodoroService defines the interface for pomodoro operations
@@ -46,7 +48,7 @@ func NewPomodoroManager(config *SessionConfig, handler EventHandler) *PomodoroMa
 	
 	return &PomodoroManager{
 		config:       config,
-		state:        Idle,
+		state:        SessionStateIdle,
 		eventHandler: handler,
 		ctx:          ctx,
 		cancel:       cancel,
@@ -60,7 +62,7 @@ func (pm *PomodoroManager) StartWorkSession() error {
 	defer pm.mu.Unlock()
 	
 	pm.currentSession = NewWorkSession(pm.config)
-	pm.state = WorkSession
+	pm.state = SessionStateWork
 	pm.lastStateChange = time.Now()
 	
 	if pm.eventHandler != nil {
@@ -78,7 +80,7 @@ func (pm *PomodoroManager) StartBreakSession() error {
 	defer pm.mu.Unlock()
 	
 	pm.currentSession = NewBreakSession(pm.config)
-	pm.state = BreakSession
+	pm.state = SessionStateBreak
 	pm.lastStateChange = time.Now()
 	
 	if pm.eventHandler != nil {
@@ -167,7 +169,7 @@ func (pm *PomodoroManager) GetIdleDuration() time.Duration {
 	pm.mu.RLock()
 	defer pm.mu.RUnlock()
 	
-	if pm.state == Idle {
+	if pm.state == SessionStateIdle {
 		return time.Since(pm.lastStateChange)
 	}
 	
@@ -176,7 +178,7 @@ func (pm *PomodoroManager) GetIdleDuration() time.Duration {
 
 // sessionTimer runs the session timer in a separate goroutine
 func (pm *PomodoroManager) sessionTimer() {
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(config.TimerTickInterval)
 	defer ticker.Stop()
 	
 	for {
@@ -217,7 +219,7 @@ func (pm *PomodoroManager) endSession() {
 		}
 		
 		pm.currentSession = nil
-		pm.state = Idle
+		pm.state = SessionStateIdle
 		pm.lastStateChange = time.Now()
 		
 		go pm.warningTimer()
@@ -226,7 +228,7 @@ func (pm *PomodoroManager) endSession() {
 
 // warningTimer handles idle warnings
 func (pm *PomodoroManager) warningTimer() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(config.WarningInterval)
 	defer ticker.Stop()
 	
 	for {
@@ -239,7 +241,7 @@ func (pm *PomodoroManager) warningTimer() {
 			idleDuration := pm.GetIdleDuration()
 			pm.mu.RUnlock()
 			
-			if state != Idle {
+			if state != SessionStateIdle {
 				return
 			}
 			
