@@ -13,6 +13,7 @@ import (
 type App struct {
 	ctx             context.Context
 	pomodoroManager *domain.PomodoroManager
+	isWindowHidden  bool
 }
 
 // NewApp creates a new App application struct
@@ -29,6 +30,42 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+// domReady is called after the front-end dom has been loaded
+func (a *App) domReady(ctx context.Context) {
+	// DOM ready handler
+}
+
+// beforeClose is called when the application is about to quit,
+// either by clicking the window close button or calling runtime.Quit.
+// Returning true will cause the application to continue, false will continue shutdown as normal.
+func (a *App) beforeClose(ctx context.Context) (prevent bool) {
+	// Hide window instead of closing to enable background operation
+	runtime.WindowHide(ctx)
+	a.isWindowHidden = true
+	return true // Prevent actual close
+}
+
+// shutdown is called at application termination
+func (a *App) shutdown(ctx context.Context) {
+	// Clean shutdown
+	if a.pomodoroManager != nil {
+		a.pomodoroManager.Shutdown()
+	}
+}
+
+// ShowWindow shows the window (for use when bringing back from background)
+func (a *App) ShowWindow() {
+	if a.isWindowHidden {
+		runtime.WindowShow(a.ctx)
+		a.isWindowHidden = false
+	}
+}
+
+// IsWindowHidden returns whether the window is currently hidden
+func (a *App) IsWindowHidden() bool {
+	return a.isWindowHidden
 }
 
 // StartWorkSession starts a new work session
@@ -77,6 +114,11 @@ func (a *App) OnSessionEnd(session *domain.Session) {
 	runtime.EventsEmit(a.ctx, "session:end", map[string]interface{}{
 		"state": session.State.String(),
 	})
+	
+	// Show window if it's hidden (bring back from background)
+	if a.isWindowHidden {
+		a.ShowWindow()
+	}
 	
 	// Enable fullscreen mode when session ends
 	runtime.WindowFullscreen(a.ctx)

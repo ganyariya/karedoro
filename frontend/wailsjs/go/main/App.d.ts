@@ -7,6 +7,8 @@ export function GetCurrentState():Promise<string>;
 
 export function GetRemainingTime():Promise<number>;
 
+export function IsWindowHidden():Promise<boolean>;
+
 export function OnSessionEnd(arg1:domain.Session):Promise<void>;
 
 export function OnSessionPause(arg1:domain.Session):Promise<void>;
@@ -22,6 +24,8 @@ export function OnWarning(arg1:time.Duration):Promise<void>;
 export function PauseSession():Promise<void>;
 
 export function ResumeSession():Promise<void>;
+
+export function ShowWindow():Promise<void>;
 
 export function StartBreakSession():Promise<void>;
 

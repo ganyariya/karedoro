@@ -10,6 +10,10 @@ export function GetRemainingTime() {
   return window['go']['main']['App']['GetRemainingTime']();
 }
 
+export function IsWindowHidden() {
+  return window['go']['main']['App']['IsWindowHidden']();
+}
+
 export function OnSessionEnd(arg1) {
   return window['go']['main']['App']['OnSessionEnd'](arg1);
 }
@@ -40,6 +44,10 @@ export function PauseSession() {
 
 export function ResumeSession() {
   return window['go']['main']['App']['ResumeSession']();
+}
+
+export function ShowWindow() {
+  return window['go']['main']['App']['ShowWindow']();
 }
 
 export function StartBreakSession() {
