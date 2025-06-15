@@ -2,7 +2,7 @@ import {useState, useEffect} from 'react';
 import logo from './assets/images/logo-universal.png';
 import './App.css';
 import {StartWorkSession, StartBreakSession, PauseSession, ResumeSession, GetCurrentState, GetRemainingTime} from "../wailsjs/go/main/App";
-import {EventsOn} from "../wailsjs/runtime/runtime";
+import {EventsOn, EventsOff} from "../wailsjs/runtime/runtime";
 import { APP_CONSTANTS, BUTTON_LABELS } from './constants/app';
 import { EVENTS } from './constants/events';
 import { SESSION_STATE, SessionStateType, isIdleState, isWorkSession, isBreakSession } from './types/session';
@@ -13,40 +13,96 @@ function App() {
     const [isPaused, setIsPaused] = useState(false);
 
     useEffect(() => {
-        // Listen for session events
-        EventsOn(EVENTS.SESSION_START, (data: any) => {
+        // Event handler functions
+        const handleSessionStart = (data: any) => {
+            console.log('Session start event:', data);
             setCurrentState(data.state as SessionStateType);
-        });
+        };
 
-        EventsOn(EVENTS.SESSION_END, (data: any) => {
+        const handleSessionEnd = (data: any) => {
+            console.log('Session end event:', data);
             setCurrentState(SESSION_STATE.IDLE);
-        });
+        };
 
-        EventsOn(EVENTS.SESSION_PAUSE, (data: any) => {
+        const handleSessionPause = (data: any) => {
+            console.log('Session pause event:', data);
             setIsPaused(true);
-        });
+        };
 
-        EventsOn(EVENTS.SESSION_RESUME, (data: any) => {
+        const handleSessionResume = (data: any) => {
+            console.log('Session resume event:', data);
             setIsPaused(false);
-        });
+        };
 
-        EventsOn(EVENTS.TIMER_TICK, (data: any) => {
+        const handleTimerTick = (data: any) => {
             setRemainingTime(data.remainingTime);
-        });
+        };
 
-        EventsOn(EVENTS.WARNING, (data: any) => {
+        const handleWarning = (data: any) => {
             console.log("Warning: Idle for", data.idleDuration, "minutes");
-        });
+        };
+
+        // Register event listeners - EventsOn may return cleanup functions
+        const cleanupFunctions: Array<() => void> = [];
+        
+        try {
+            const sessionStartCleanup = EventsOn(EVENTS.SESSION_START, handleSessionStart);
+            const sessionEndCleanup = EventsOn(EVENTS.SESSION_END, handleSessionEnd);
+            const sessionPauseCleanup = EventsOn(EVENTS.SESSION_PAUSE, handleSessionPause);
+            const sessionResumeCleanup = EventsOn(EVENTS.SESSION_RESUME, handleSessionResume);
+            const timerTickCleanup = EventsOn(EVENTS.TIMER_TICK, handleTimerTick);
+            const warningCleanup = EventsOn(EVENTS.WARNING, handleWarning);
+            
+            // If EventsOn returns cleanup functions, store them
+            if (typeof sessionStartCleanup === 'function') cleanupFunctions.push(sessionStartCleanup);
+            if (typeof sessionEndCleanup === 'function') cleanupFunctions.push(sessionEndCleanup);
+            if (typeof sessionPauseCleanup === 'function') cleanupFunctions.push(sessionPauseCleanup);
+            if (typeof sessionResumeCleanup === 'function') cleanupFunctions.push(sessionResumeCleanup);
+            if (typeof timerTickCleanup === 'function') cleanupFunctions.push(timerTickCleanup);
+            if (typeof warningCleanup === 'function') cleanupFunctions.push(warningCleanup);
+        } catch (error) {
+            console.error('Error registering event listeners:', error);
+        }
 
         // Update state periodically
         const interval = setInterval(async () => {
-            const state = await GetCurrentState();
-            const time = await GetRemainingTime();
-            setCurrentState(state as SessionStateType);
-            setRemainingTime(time);
+            try {
+                const state = await GetCurrentState();
+                const time = await GetRemainingTime();
+                setCurrentState(state as SessionStateType);
+                setRemainingTime(time);
+            } catch (error) {
+                console.error('Error updating state:', error);
+            }
         }, APP_CONSTANTS.TIMER_UPDATE_INTERVAL);
 
-        return () => clearInterval(interval);
+        // Cleanup function
+        return () => {
+            clearInterval(interval);
+            
+            // Call cleanup functions if available
+            cleanupFunctions.forEach(cleanup => {
+                try {
+                    cleanup();
+                } catch (error) {
+                    console.error('Error cleaning up event listener:', error);
+                }
+            });
+            
+            // Fallback: try EventsOff if available
+            try {
+                if (typeof EventsOff === 'function') {
+                    EventsOff(EVENTS.SESSION_START);
+                    EventsOff(EVENTS.SESSION_END);
+                    EventsOff(EVENTS.SESSION_PAUSE);
+                    EventsOff(EVENTS.SESSION_RESUME);
+                    EventsOff(EVENTS.TIMER_TICK);
+                    EventsOff(EVENTS.WARNING);
+                }
+            } catch (error) {
+                console.error('EventsOff not available or failed:', error);
+            }
+        };
     }, []);
 
     const formatTime = (seconds: number) => {
