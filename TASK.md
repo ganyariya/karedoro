@@ -145,7 +145,7 @@
 ## 🔍 開発イテレーション品質保証要件
 
 ### 必須確認プロセス
-**すべての開発タスクにおいて、以下の3つの確認を必須とする：**
+**すべての開発タスクにおいて、以下の4つの確認を必須とする：**
 
 #### 1. テスト実行確認 ✅
 - **Go バックエンドテスト**
@@ -181,6 +181,18 @@
   - ボタン・入力フィールドが正常に機能すること
   - 画面遷移が正常に動作すること
 
+#### 4. コード品質確認 🔧
+- **Go言語ベストプラクティス確認**
+  - マジックナンバー・マジック文字列の排除
+  - 適切な定数・変数名の使用
+  - エラーハンドリングの改善
+  - 構造体・インターフェース設計の見直し
+- **TypeScriptベストプラクティス確認**
+  - 型安全性の向上
+  - マジック値の定数化
+  - コンポーネント設計の改善
+  - イベントハンドリングの最適化
+
 ### 📋 各フェーズ完了時の確認チェックリスト
 
 #### Phase 1 完了確認
@@ -189,6 +201,7 @@
 - [ ] 🎯 タイマー機能の基本動作確認
 - [ ] 🎯 セッション状態遷移ロジック確認
 - [ ] 🎯 ドメインロジックの単体動作確認
+- [ ] 🔧 Phase 1 コード品質リファクタリング
 
 #### Phase 2 完了確認
 - [ ] ✅ フロントエンド・バックエンド両方のテスト PASS
@@ -196,6 +209,7 @@
 - [ ] 🎯 UIコンポーネントの表示確認
 - [ ] 🎯 Wails Bindings の動作確認
 - [ ] 🎯 音響・通知機能の動作確認
+- [ ] 🔧 Phase 2 コード品質リファクタリング
 
 #### Phase 3 完了確認
 - [ ] ✅ 統合テスト含む全テスト PASS
@@ -204,6 +218,7 @@
 - [ ] 🎯 全画面強制機能の動作確認
 - [ ] 🎯 警告システムの動作確認
 - [ ] 🎯 ウィンドウ制御機能の確認
+- [ ] 🔧 Phase 3 コード品質リファクタリング
 
 #### Phase 4 完了確認
 - [ ] ✅ 全単体・統合・E2Eテスト PASS
@@ -211,6 +226,7 @@
 - [ ] 🎯 パフォーマンス・メモリリーク検証
 - [ ] 🎯 クロスプラットフォーム動作確認
 - [ ] 🎯 長時間動作の安定性確認
+- [ ] 🔧 Phase 4 コード品質リファクタリング
 
 #### Phase 5 完了確認
 - [ ] ✅ 最終テストスイート PASS
@@ -218,6 +234,7 @@
 - [ ] 🎯 インストール・実行の動作確認
 - [ ] 🎯 ユーザーシナリオ通りの動作確認
 - [ ] 🎯 エラーケース対応の確認
+- [ ] 🔧 最終コード品質リファクタリング
 
 ### ⚠️ 品質保証ルール
 
@@ -247,6 +264,12 @@
    - フェーズ完了時には必ずコミット
    - ビルド・テスト通過を確認してからコミット実行
 
+7. **イテレーション・リファクタリング原則**
+   - 各フェーズ完了時に必ずコード品質の見直しを実施
+   - Go/TypeScriptのベストプラクティスに準拠したリファクタリング
+   - マジックナンバー・マジック文字列の完全排除
+   - コードの可読性・保守性・拡張性の向上
+
 ### 🚨 品質保証失敗時の対応
 
 **テスト失敗時：**
@@ -263,6 +286,187 @@
 - 期待動作と実際の動作の比較
 - 仕様書との照合
 - 必要に応じて仕様変更の検討
+
+## 🧹 コード品質・リファクタリング要件
+
+### 💎 リファクタリング基本方針
+
+**各フェーズ完了時に必須で実施するコード品質向上作業**
+
+#### 1. マジック値の完全排除 🚨 **重要**
+- **マジックナンバーの定数化**
+  - `25 * time.Minute` → `const DefaultWorkDuration = 25 * time.Minute`
+  - `5 * time.Minute` → `const DefaultBreakDuration = 5 * time.Minute`
+  - `100 * time.Millisecond` → `const TimerTickInterval = 100 * time.Millisecond`
+  - `5 * time.Minute` → `const WarningInterval = 5 * time.Minute`
+
+- **マジック文字列の定数化**
+  - `"session:start"` → `const EventSessionStart = "session:start"`
+  - `"Idle"`, `"WorkSession"`, `"BreakSession"` → 適切な型定義
+  - `"Karedoro"` → `const AppName = "Karedoro"`
+
+#### 2. Go言語ベストプラクティス適用
+
+##### 2.1 定数・設定管理
+```go
+// config/constants.go
+package config
+
+import "time"
+
+const (
+    // Session durations
+    DefaultWorkDuration  = 25 * time.Minute
+    DefaultBreakDuration = 5 * time.Minute
+    
+    // Timer intervals
+    TimerTickInterval = 100 * time.Millisecond
+    WarningInterval   = 5 * time.Minute
+    
+    // Application constants
+    AppName = "Karedoro"
+    AppVersion = "1.0.0"
+)
+
+// Event names
+const (
+    EventSessionStart  = "session:start"
+    EventSessionEnd    = "session:end"
+    EventSessionPause  = "session:pause"
+    EventSessionResume = "session:resume"
+    EventTimerTick     = "timer:tick"
+    EventWarning       = "warning"
+)
+```
+
+##### 2.2 エラーハンドリングの改善
+- カスタムエラー型の定義
+- センチネルエラーの使用
+- エラーラッピングの適切な実装
+
+##### 2.3 構造体・インターフェース設計
+- 単一責任の原則の適用
+- インターフェース分離の原則
+- 依存性逆転の原則
+
+#### 3. TypeScript/React ベストプラクティス適用
+
+##### 3.1 型安全性の向上
+```typescript
+// types/session.ts
+export const SessionState = {
+  IDLE: 'Idle',
+  WORK_SESSION: 'WorkSession',
+  BREAK_SESSION: 'BreakSession'
+} as const;
+
+export type SessionStateType = typeof SessionState[keyof typeof SessionState];
+
+// constants/app.ts
+export const APP_CONSTANTS = {
+  TIMER_UPDATE_INTERVAL: 1000,
+  WARNING_IDLE_MINUTES: 5,
+  APP_TITLE: 'Karedoro ポモドーロタイマー'
+} as const;
+
+// constants/events.ts
+export const EVENTS = {
+  SESSION_START: 'session:start',
+  SESSION_END: 'session:end',
+  SESSION_PAUSE: 'session:pause',
+  SESSION_RESUME: 'session:resume',
+  TIMER_TICK: 'timer:tick',
+  WARNING: 'warning'
+} as const;
+```
+
+##### 3.2 コンポーネント設計改善
+- プロップスの型定義強化
+- カスタムフックの抽出
+- コンポーネントの責任分離
+
+##### 3.3 状態管理の最適化
+- useState の適切な使用
+- useEffect の依存配列最適化
+- メモ化の適切な適用
+
+#### 4. ファイル構成・アーキテクチャ改善
+
+##### 4.1 Go側のディレクトリ構造
+```
+/
+├── cmd/                 # エントリーポイント
+├── internal/           # プライベートパッケージ
+│   ├── app/           # アプリケーション層
+│   ├── domain/        # ドメイン層（既存）
+│   ├── config/        # 設定・定数
+│   └── errors/        # エラー定義
+├── pkg/               # パブリックパッケージ
+└── test/              # テストユーティリティ
+```
+
+##### 4.2 TypeScript側のディレクトリ構造
+```
+src/
+├── components/        # UIコンポーネント
+├── hooks/            # カスタムフック
+├── types/            # 型定義
+├── constants/        # 定数定義
+├── utils/            # ユーティリティ関数
+└── services/         # Wails API呼び出し
+```
+
+### 🔍 リファクタリング実施タイミング
+
+#### フェーズ完了時のリファクタリング内容
+
+**Phase 1 リファクタリング**
+- [ ] ドメイン層の定数抽出
+- [ ] 設定管理の分離
+- [ ] エラー型の定義
+- [ ] テストの改善
+
+**Phase 2 リファクタリング**
+- [ ] フロントエンド定数の抽出
+- [ ] 型定義の強化
+- [ ] コンポーネント分離
+- [ ] カスタムフックの抽出
+
+**Phase 3 リファクタリング**
+- [ ] アーキテクチャ全体の見直し
+- [ ] パフォーマンス最適化
+- [ ] メモリリーク対策
+- [ ] セキュリティ向上
+
+**Phase 4 リファクタリング**
+- [ ] コードレビューによる品質向上
+- [ ] ドキュメント整備
+- [ ] テストカバレッジ向上
+- [ ] 静的解析結果の対応
+
+**Phase 5 リファクタリング**
+- [ ] 最終コード監査
+- [ ] パフォーマンス測定・改善
+- [ ] プロダクション準備
+- [ ] 保守性確保
+
+### ⚡ リファクタリング実施ルール
+
+1. **ゼロ・リグレッション原則**
+   - リファクタリング後もすべてのテストが通ること
+   - 機能的な変更は一切含めない
+
+2. **段階的改善原則**
+   - 一度に大きな変更をせず、小さな改善を積み重ねる
+   - 各改善後にテスト・ビルド・動作確認を実施
+
+3. **文書化原則**
+   - 変更理由と改善内容を明確にコミットメッセージに記載
+   - 破壊的変更がある場合は事前に影響範囲を調査
+
+4. **パフォーマンス維持原則**
+   - リファクタリングによってパフォーマンスが劣化しないこと
+   - 必要に応じてベンチマークテストを実施
 
 ## 📝 開発ワークフロー
 
