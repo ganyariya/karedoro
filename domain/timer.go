@@ -40,7 +40,12 @@ func (t *Timer) Pause() {
 	
 	t.isPaused = true
 	t.pausedTime = time.Now()
-	t.remaining = t.remaining - time.Since(t.startTime)
+	elapsed := time.Since(t.startTime)
+	t.remaining = t.remaining - elapsed
+	
+	if t.remaining < 0 {
+		t.remaining = 0
+	}
 }
 
 func (t *Timer) Resume() {
@@ -71,11 +76,15 @@ func (t *Timer) Update() {
 	}
 	
 	elapsed := time.Since(t.startTime)
-	t.remaining = t.duration - elapsed
+	newRemaining := t.remaining - elapsed
 	
-	if t.remaining <= 0 {
+	if newRemaining <= 0 {
 		t.remaining = 0
 		t.isRunning = false
+		t.isPaused = false
+	} else {
+		t.remaining = newRemaining
+		t.startTime = time.Now()
 	}
 }
 
@@ -97,11 +106,11 @@ func (t *Timer) Remaining() time.Duration {
 	}
 	
 	if !t.isRunning {
-		return t.duration
+		return t.remaining
 	}
 	
 	elapsed := time.Since(t.startTime)
-	remaining := t.duration - elapsed
+	remaining := t.remaining - elapsed
 	
 	if remaining < 0 {
 		return 0
