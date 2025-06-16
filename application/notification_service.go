@@ -31,7 +31,7 @@ func (n *NotificationService) ShowWorkSessionStart() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"作業セッション開始！集中して取り組みましょう。",
+		"Work Session Started! Time to focus.",
 		"",
 	)
 }
@@ -43,7 +43,7 @@ func (n *NotificationService) ShowBreakSessionStart() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"休憩セッション開始！リラックスしてください。",
+		"Break Session Started! Time to relax.",
 		"",
 	)
 }
@@ -55,7 +55,7 @@ func (n *NotificationService) ShowWorkSessionEnd() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"ポモドーロ完了！休憩しましょう！",
+		"Pomodoro Complete! Take a break!",
 		"",
 	)
 }
@@ -67,7 +67,7 @@ func (n *NotificationService) ShowBreakSessionEnd() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"休憩終了！作業に戻りましょう！",
+		"Break Over! Back to work!",
 		"",
 	)
 }
@@ -79,7 +79,7 @@ func (n *NotificationService) ShowWarning() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"まだ次のセッションを開始していません！",
+		"Haven't started next session yet!",
 		"",
 	)
 }
@@ -91,7 +91,7 @@ func (n *NotificationService) ShowSessionPaused() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"セッションが一時停止されました。",
+		"Session paused.",
 		"",
 	)
 }
@@ -103,7 +103,7 @@ func (n *NotificationService) ShowSessionResumed() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"セッションが再開されました。",
+		"Session resumed.",
 		"",
 	)
 }

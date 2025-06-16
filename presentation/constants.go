@@ -29,16 +29,22 @@ var (
 )
 
 const (
-	WorkSessionStartMessage    = "作業セッション開始！"
-	BreakSessionStartMessage   = "休憩セッション開始！"
-	WorkSessionEndMessage      = "ポモドーロ完了！休憩しましょう！"
-	BreakSessionEndMessage     = "休憩終了！作業に戻りましょう！"
-	WarningMessage            = "まだ次のセッションを開始していません！"
+	WorkSessionStartMessage    = "Work Session Started!"
+	BreakSessionStartMessage   = "Break Session Started!"
+	WorkSessionEndMessage      = "Pomodoro Complete! Take a break!"
+	BreakSessionEndMessage     = "Break Over! Back to work!"
+	WarningMessage            = "Haven't started next session yet!"
 	
-	StartWorkButtonText       = "作業セッションを開始"
-	StartBreakButtonText      = "休憩セッションを開始"
-	SkipBreakButtonText       = "休憩をスキップして作業セッションへ"
-	PauseButtonText          = "一時停止"
-	ResumeButtonText         = "再開"
-	PausedText               = "一時停止中"
+	StartWorkButtonText       = "Start Work Session"
+	StartBreakButtonText      = "Start Break Session"
+	SkipBreakButtonText       = "Skip Break -> Work"
+	PauseButtonText          = "Pause"
+	ResumeButtonText         = "Resume"
+	PausedText               = "PAUSED"
+	
+	IdleScreenMessage         = "Choose your next session:"
+	WorkingText               = "WORKING"
+	BreakText                 = "BREAK TIME"
+	PauseInstructionText      = "Press SPACE to pause"
+	ResumeInstructionText     = "Press SPACE to resume"
 )

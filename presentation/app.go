@@ -245,11 +245,11 @@ func (a *App) drawWorkSession(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, timerText, WindowWidth/2-50, WindowHeight/2-100)
 	
 	if session.IsSessionPaused() {
-		ebitenutil.DebugPrintAt(screen, PausedText, WindowWidth/2-40, WindowHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, "スペースキーで再開", WindowWidth/2-60, WindowHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, PausedText, WindowWidth/2-30, WindowHeight/2-50)
+		ebitenutil.DebugPrintAt(screen, ResumeInstructionText, WindowWidth/2-80, WindowHeight/2-20)
 	} else {
-		ebitenutil.DebugPrintAt(screen, "作業中", WindowWidth/2-30, WindowHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, "スペースキーで一時停止", WindowWidth/2-80, WindowHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, WorkingText, WindowWidth/2-30, WindowHeight/2-50)
+		ebitenutil.DebugPrintAt(screen, PauseInstructionText, WindowWidth/2-80, WindowHeight/2-20)
 	}
 }
 
@@ -263,16 +263,16 @@ func (a *App) drawBreakSession(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, timerText, WindowWidth/2-50, WindowHeight/2-100)
 	
 	if session.IsSessionPaused() {
-		ebitenutil.DebugPrintAt(screen, PausedText, WindowWidth/2-40, WindowHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, "スペースキーで再開", WindowWidth/2-60, WindowHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, PausedText, WindowWidth/2-30, WindowHeight/2-50)
+		ebitenutil.DebugPrintAt(screen, ResumeInstructionText, WindowWidth/2-80, WindowHeight/2-20)
 	} else {
-		ebitenutil.DebugPrintAt(screen, "休憩中", WindowWidth/2-30, WindowHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, "スペースキーで一時停止", WindowWidth/2-80, WindowHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, BreakText, WindowWidth/2-40, WindowHeight/2-50)
+		ebitenutil.DebugPrintAt(screen, PauseInstructionText, WindowWidth/2-80, WindowHeight/2-20)
 	}
 }
 
 func (a *App) drawIdleScreen(screen *ebiten.Image) {
-	ebitenutil.DebugPrintAt(screen, "次のセッションを選択してください", WindowWidth/2-120, WindowHeight/2-150)
+	ebitenutil.DebugPrintAt(screen, IdleScreenMessage, WindowWidth/2-100, WindowHeight/2-150)
 	
 	a.drawButtons(screen)
 }
