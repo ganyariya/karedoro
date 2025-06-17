@@ -3,10 +3,12 @@ package application
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math"
 	"time"
 
 	"github.com/ebitengine/oto/v3"
+	"karedoro/domain"
 )
 
 const (
@@ -52,6 +54,7 @@ type AudioService struct {
 	readyChannel chan struct{}
 	isReady      bool
 	volume       float64
+	initError    error
 }
 
 func NewAudioService() *AudioService {
@@ -75,6 +78,7 @@ func (a *AudioService) initialize() {
 	
 	context, readyChan, err := oto.NewContext(op)
 	if err != nil {
+		a.initError = domain.NewTimerError("initialize", fmt.Errorf("%w: %v", domain.ErrAudioInitialization, err))
 		close(a.readyChannel)
 		return
 	}
@@ -99,8 +103,11 @@ func (a *AudioService) WaitForReady(timeout time.Duration) bool {
 }
 
 func (a *AudioService) PlayBeep(frequency float64, duration time.Duration) error {
+	if a.initError != nil {
+		return a.initError
+	}
 	if !a.isReady {
-		return nil
+		return domain.ErrAudioNotReady
 	}
 	
 	samples := int(float64(SampleRate) * duration.Seconds())
@@ -136,23 +143,35 @@ func (a *AudioService) PlayStartSound() error {
 
 func (a *AudioService) PlayEndSound() error {
 	// セッション終了を強力に通知
-	a.PlayBeep(EndSound1Freq, EndSound1Duration)
+	if err := a.PlayBeep(EndSound1Freq, EndSound1Duration); err != nil {
+		return fmt.Errorf("%w: first beep failed: %v", domain.ErrAudioPlayback, err)
+	}
 	time.Sleep(EndSoundGap)
-	a.PlayBeep(EndSound2Freq, EndSound2Duration)
+	if err := a.PlayBeep(EndSound2Freq, EndSound2Duration); err != nil {
+		return fmt.Errorf("%w: second beep failed: %v", domain.ErrAudioPlayback, err)
+	}
 	time.Sleep(EndSoundGap)
-	a.PlayBeep(EndSound3Freq, EndSound3Duration)
+	if err := a.PlayBeep(EndSound3Freq, EndSound3Duration); err != nil {
+		return fmt.Errorf("%w: third beep failed: %v", domain.ErrAudioPlayback, err)
+	}
 	time.Sleep(EndSoundLongGap)
 	// 追加の強調音
-	a.PlayBeep(EndSound4Freq, EndSound4Duration)
+	if err := a.PlayBeep(EndSound4Freq, EndSound4Duration); err != nil {
+		return fmt.Errorf("%w: fourth beep failed: %v", domain.ErrAudioPlayback, err)
+	}
 	return nil
 }
 
 func (a *AudioService) PlayWarningSound() error {
 	// より強力で持続的な警告音を再生
 	for i := 0; i < WarningCycles; i++ {
-		a.PlayBeep(WarningHighFreq, WarningDuration) // 高い周波数で長時間
+		if err := a.PlayBeep(WarningHighFreq, WarningDuration); err != nil {
+			return fmt.Errorf("%w: warning high beep cycle %d failed: %v", domain.ErrAudioPlayback, i, err)
+		}
 		time.Sleep(WarningGap)
-		a.PlayBeep(WarningLowFreq, WarningDuration)  // 低い周波数で対比
+		if err := a.PlayBeep(WarningLowFreq, WarningDuration); err != nil {
+			return fmt.Errorf("%w: warning low beep cycle %d failed: %v", domain.ErrAudioPlayback, i, err)
+		}
 		time.Sleep(WarningGap)
 	}
 	return nil
@@ -168,7 +187,13 @@ func (a *AudioService) SetVolume(volume float64) {
 	a.volume = volume
 }
 
+func (a *AudioService) IsReady() bool {
+	return a.isReady && a.initError == nil
+}
+
 func (a *AudioService) Close() error {
+	// oto.Context does not have a Close method in v3
+	// The context will be garbage collected when no longer referenced
 	return nil
 }
 
