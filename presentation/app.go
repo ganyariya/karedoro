@@ -1,25 +1,13 @@
 package presentation
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 
 	"karedoro/application"
-	"karedoro/domain"
 )
 
 type App struct {
-	sessionService      *application.SessionService
-	configService       *application.ConfigService
-	
-	currentScreen   Screen
-	isFullscreen    bool
-	buttonManager   *ButtonManager
-	screenRenderer  *ScreenRenderer
-	eventHandler    *EventHandler
+	coordinator *AppCoordinator
 }
 
 type Screen int
@@ -39,97 +27,30 @@ type Button struct {
 func NewApp() (*App, *application.AudioService) {
 	audioService := application.NewAudioService()
 	notificationService := application.NewNotificationService()
+	sessionService := application.NewSessionService()
+	configService := application.NewConfigService()
+	eventHandler := NewEventHandler(audioService, notificationService)
+	
+	coordinator := NewAppCoordinator(sessionService, configService, eventHandler)
+	coordinator.Initialize()
 	
 	app := &App{
-		sessionService:      application.NewSessionService(),
-		configService:       application.NewConfigService(),
-		currentScreen:       MainScreen,
-		isFullscreen:        false,
-		buttonManager:       NewButtonManager(),
-		screenRenderer:      NewScreenRenderer(),
-		eventHandler:        NewEventHandler(audioService, notificationService),
+		coordinator: coordinator,
 	}
-	
-	app.setupEventCallbacks()
-	
-	// Setup initial buttons
-	screenWidth, screenHeight := ebiten.WindowSize()
-	app.buttonManager.SetupMainButtons(screenWidth, screenHeight, app.sessionService)
 	
 	return app, audioService
 }
 
-func (a *App) setupEventCallbacks() {
-	a.eventHandler.SetupCallbacks(
-		a.sessionService,
-		func() {
-			a.currentScreen = FullscreenOverlay
-			a.isFullscreen = true
-			screenWidth, screenHeight := ebiten.WindowSize()
-			a.buttonManager.SetupEndOfWorkButtons(screenWidth, screenHeight, a.sessionService)
-		},
-		func() {
-			a.currentScreen = FullscreenOverlay
-			a.isFullscreen = true
-			screenWidth, screenHeight := ebiten.WindowSize()
-			a.buttonManager.SetupEndOfBreakButtons(screenWidth, screenHeight, a.sessionService)
-		},
-	)
-	
-	// Handle session start events that need screen changes
-	a.sessionService.AddEventCallback(domain.EventWorkSessionStart, func() {
-		a.currentScreen = MainScreen
-		if a.isFullscreen {
-			ebiten.SetFullscreen(false)
-			a.isFullscreen = false
-		}
-	})
-	
-	a.sessionService.AddEventCallback(domain.EventBreakSessionStart, func() {
-		a.currentScreen = MainScreen
-		if a.isFullscreen {
-			ebiten.SetFullscreen(false)
-			a.isFullscreen = false
-		}
-	})
-}
 
 
 
 func (a *App) Update() error {
-	a.sessionService.Update()
-	
-	session := a.sessionService.GetSession()
-	
-	switch session.GetState() {
-	case domain.WorkSession, domain.BreakSession:
-		if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-			if session.IsSessionPaused() {
-				a.sessionService.ResumeSession()
-			} else {
-				a.sessionService.PauseSession()
-			}
-		}
-	}
-	
-	// Update button positions and handle interactions
-	screenWidth, screenHeight := ebiten.WindowSize()
-	a.buttonManager.UpdateButtonPositions(screenWidth, screenHeight)
-	a.buttonManager.UpdateButtons()
-	
-	return nil
+	return a.coordinator.Update()
 }
 
 
 func (a *App) Draw(screen *ebiten.Image) {
-	screen.Fill(BackgroundColor)
-	
-	switch a.currentScreen {
-	case MainScreen:
-		a.screenRenderer.DrawMainScreen(screen, a.sessionService.GetSession(), a.buttonManager)
-	case FullscreenOverlay:
-		a.screenRenderer.DrawFullscreenOverlay(screen, a.sessionService.GetSession(), a.buttonManager)
-	}
+	a.coordinator.Draw(screen)
 }
 
 
@@ -146,13 +67,8 @@ func (a *App) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight
 }
 
 func (a *App) Run(audioService *application.AudioService) error {
-	ebiten.SetWindowSize(WindowWidth, WindowHeight)
-	ebiten.SetWindowTitle(WindowTitle)
-	ebiten.SetWindowClosingHandled(true)
-	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	
-	if !audioService.WaitForReady(5 * time.Second) {
-		fmt.Println("Warning: Audio system initialization timeout")
+	if err := a.coordinator.RunSetup(audioService); err != nil {
+		return err
 	}
 	
 	return ebiten.RunGame(a)
