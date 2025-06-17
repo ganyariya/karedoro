@@ -12,7 +12,7 @@ import (
 func main() {
 	// ebitenuiを使用したアプリケーションのテスト
 	services := application.NewServices()
-	app := presentation.NewWorkingEbitenUIApp(services)
+	app := presentation.NewEbitenUIApp(services)
 
 	ebiten.SetWindowSize(800, 600)
 	ebiten.SetWindowTitle("Karedoro - EbitenUI Version")

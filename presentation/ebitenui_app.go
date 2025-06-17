@@ -16,33 +16,37 @@ import (
 	"karedoro/domain"
 )
 
-// FixedEbitenUIApp はebitenuiを使用した修正版アプリケーション
-type FixedEbitenUIApp struct {
+// EbitenUIApp はebitenuiを使用したアプリケーション
+type EbitenUIApp struct {
 	ui             *ebitenui.UI
 	sessionService *application.SessionService
 	audioService   domain.AudioPlayer
 	buttonContainer *widget.Container
 	progressBar    *widget.ProgressBar
+	
+	// ボタンラベル追跡用
+	buttonLabels   map[*widget.Button]string
 }
 
-// NewFixedEbitenUIApp は新しいebitenuiアプリケーションを作成
-func NewFixedEbitenUIApp(services *application.Services) *FixedEbitenUIApp {
-	app := &FixedEbitenUIApp{
+// NewEbitenUIApp は新しいebitenuiアプリケーションを作成
+func NewEbitenUIApp(services *application.Services) *EbitenUIApp {
+	app := &EbitenUIApp{
 		sessionService: services.Session,
 		audioService:   services.Audio,
+		buttonLabels:   make(map[*widget.Button]string),
 	}
 	
 	app.buildUI()
 	return app
 }
 
-func (a *FixedEbitenUIApp) buildUI() {
-	// ルートコンテナをRowLayoutで作成
+func (a *EbitenUIApp) buildUI() {
+	// ルートコンテナ
 	rootContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(30),
-			widget.RowLayoutOpts.Padding(widget.Insets{Top: 100, Bottom: 100, Left: 100, Right: 100}),
+			widget.RowLayoutOpts.Spacing(40),
+			widget.RowLayoutOpts.Padding(widget.Insets{Top: 120, Bottom: 120, Left: 100, Right: 100}),
 		)),
 	)
 
@@ -53,15 +57,15 @@ func (a *FixedEbitenUIApp) buildUI() {
 				Position: widget.RowLayoutPositionCenter,
 				MaxWidth: 400,
 			}),
-			widget.WidgetOpts.MinSize(400, 20),
+			widget.WidgetOpts.MinSize(400, 30),
 		),
 		widget.ProgressBarOpts.Images(
 			&widget.ProgressBarImage{
-				Idle:  image.NewNineSliceColor(color.RGBA{100, 100, 100, 255}),
-				Hover: image.NewNineSliceColor(color.RGBA{120, 120, 120, 255}),
+				Idle:  image.NewNineSliceColor(color.RGBA{60, 60, 60, 255}),
+				Hover: image.NewNineSliceColor(color.RGBA{80, 80, 80, 255}),
 			},
 			&widget.ProgressBarImage{
-				Idle:  image.NewNineSliceColor(color.RGBA{0, 255, 0, 255}),
+				Idle:  image.NewNineSliceColor(color.RGBA{0, 180, 0, 255}),
 				Hover: image.NewNineSliceColor(color.RGBA{0, 200, 0, 255}),
 			},
 		),
@@ -73,7 +77,7 @@ func (a *FixedEbitenUIApp) buildUI() {
 	a.buttonContainer = widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(15),
+			widget.RowLayoutOpts.Spacing(20),
 		)),
 	)
 	rootContainer.AddChild(a.buttonContainer)
@@ -87,8 +91,7 @@ func (a *FixedEbitenUIApp) buildUI() {
 	}
 }
 
-func (a *FixedEbitenUIApp) setupInitialButtons() {
-	// "Start Work Session"ボタン
+func (a *EbitenUIApp) setupInitialButtons() {
 	startWorkBtn := a.createButton("Start Work Session", func() {
 		log.Printf("Start Work Session clicked")
 		err := a.sessionService.StartWorkSession()
@@ -102,19 +105,19 @@ func (a *FixedEbitenUIApp) setupInitialButtons() {
 	a.buttonContainer.AddChild(startWorkBtn)
 }
 
-func (a *FixedEbitenUIApp) createButton(buttonText string, clickHandler func()) *widget.Button {
-	// ボタンの最小サイズを設定
+func (a *EbitenUIApp) createButton(buttonText string, clickHandler func()) *widget.Button {
+	// 明確な色でボタンを作成
 	button := widget.NewButton(
 		widget.ButtonOpts.WidgetOpts(
 			widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 				Position: widget.RowLayoutPositionCenter,
 			}),
-			widget.WidgetOpts.MinSize(200, 50),
+			widget.WidgetOpts.MinSize(250, 60),
 		),
 		widget.ButtonOpts.Image(&widget.ButtonImage{
-			Idle:    image.NewNineSliceColor(color.RGBA{70, 130, 180, 255}),  // SteelBlue
-			Hover:   image.NewNineSliceColor(color.RGBA{100, 149, 237, 255}), // CornflowerBlue
-			Pressed: image.NewNineSliceColor(color.RGBA{65, 105, 225, 255}),  // RoyalBlue
+			Idle:    image.NewNineSliceColor(color.RGBA{70, 130, 180, 255}),  // 鋼鉄青
+			Hover:   image.NewNineSliceColor(color.RGBA{100, 149, 237, 255}), // コーンフラワー青
+			Pressed: image.NewNineSliceColor(color.RGBA{65, 105, 225, 255}),  // 王室青
 		}),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			log.Printf("Button clicked: %s", buttonText)
@@ -122,12 +125,19 @@ func (a *FixedEbitenUIApp) createButton(buttonText string, clickHandler func()) 
 		}),
 	)
 	
+	// ボタンラベルを記録
+	a.buttonLabels[button] = buttonText
+	
 	return button
 }
 
-func (a *FixedEbitenUIApp) updateButtons() {
+func (a *EbitenUIApp) updateButtons() {
 	log.Printf("Updating buttons...")
+	
 	// 既存のボタンを削除
+	for button := range a.buttonLabels {
+		delete(a.buttonLabels, button)
+	}
 	a.buttonContainer.RemoveChildren()
 
 	session := a.sessionService.GetSession()
@@ -140,6 +150,7 @@ func (a *FixedEbitenUIApp) updateButtons() {
 	case domain.WorkSession:
 		if isPaused {
 			resumeBtn := a.createButton("Resume Work", func() {
+				log.Printf("Resume Work clicked")
 				err := a.sessionService.ResumeSession()
 				if err != nil {
 					log.Printf("Failed to resume session: %v", err)
@@ -150,6 +161,7 @@ func (a *FixedEbitenUIApp) updateButtons() {
 			a.buttonContainer.AddChild(resumeBtn)
 		} else {
 			pauseBtn := a.createButton("Pause Work", func() {
+				log.Printf("Pause Work clicked")
 				err := a.sessionService.PauseSession()
 				if err != nil {
 					log.Printf("Failed to pause session: %v", err)
@@ -162,6 +174,7 @@ func (a *FixedEbitenUIApp) updateButtons() {
 	case domain.BreakSession:
 		if isPaused {
 			resumeBtn := a.createButton("Resume Break", func() {
+				log.Printf("Resume Break clicked")
 				err := a.sessionService.ResumeSession()
 				if err != nil {
 					log.Printf("Failed to resume session: %v", err)
@@ -172,6 +185,7 @@ func (a *FixedEbitenUIApp) updateButtons() {
 			a.buttonContainer.AddChild(resumeBtn)
 		} else {
 			pauseBtn := a.createButton("Pause Break", func() {
+				log.Printf("Pause Break clicked")
 				err := a.sessionService.PauseSession()
 				if err != nil {
 					log.Printf("Failed to pause session: %v", err)
@@ -182,35 +196,45 @@ func (a *FixedEbitenUIApp) updateButtons() {
 			a.buttonContainer.AddChild(pauseBtn)
 		}
 	case domain.Idle:
-		// セッション終了後のボタン配置
-		startBreakBtn := a.createButton("Start Break", func() {
-			err := a.sessionService.StartBreakSession()
-			if err != nil {
-				log.Printf("Failed to start break session: %v", err)
-				return
-			}
-			a.audioService.PlayStartSound()
-			a.updateButtons()
-		})
-		
-		startWorkBtn := a.createButton("Start Work", func() {
-			err := a.sessionService.StartWorkSession()
-			if err != nil {
-				log.Printf("Failed to start work session: %v", err)
-				return
-			}
-			a.audioService.PlayStartSound()
-			a.updateButtons()
-		})
-		
-		// 前のセッションタイプに応じてボタンを表示
 		sessionType := session.GetSessionType()
+		
 		if sessionType == domain.Work {
 			// 作業セッション終了後
+			startBreakBtn := a.createButton("Start Break", func() {
+				log.Printf("Start Break clicked")
+				err := a.sessionService.StartBreakSession()
+				if err != nil {
+					log.Printf("Failed to start break session: %v", err)
+					return
+				}
+				a.audioService.PlayStartSound()
+				a.updateButtons()
+			})
 			a.buttonContainer.AddChild(startBreakBtn)
-			a.buttonContainer.AddChild(startWorkBtn)
+			
+			skipBreakBtn := a.createButton("Skip Break", func() {
+				log.Printf("Skip Break clicked")
+				err := a.sessionService.StartWorkSession()
+				if err != nil {
+					log.Printf("Failed to start work session: %v", err)
+					return
+				}
+				a.audioService.PlayStartSound()
+				a.updateButtons()
+			})
+			a.buttonContainer.AddChild(skipBreakBtn)
 		} else {
 			// 休憩セッション終了後または初期状態
+			startWorkBtn := a.createButton("Start Work", func() {
+				log.Printf("Start Work clicked")
+				err := a.sessionService.StartWorkSession()
+				if err != nil {
+					log.Printf("Failed to start work session: %v", err)
+					return
+				}
+				a.audioService.PlayStartSound()
+				a.updateButtons()
+			})
 			a.buttonContainer.AddChild(startWorkBtn)
 		}
 	}
@@ -218,7 +242,7 @@ func (a *FixedEbitenUIApp) updateButtons() {
 	log.Printf("Buttons updated, container has %d children", len(a.buttonContainer.Children()))
 }
 
-func (a *FixedEbitenUIApp) updateProgressBar() {
+func (a *EbitenUIApp) updateProgressBar() {
 	session := a.sessionService.GetSession()
 	sessionState := session.GetState()
 	remaining := session.GetTimeRemaining()
@@ -251,7 +275,7 @@ func (a *FixedEbitenUIApp) updateProgressBar() {
 	}
 }
 
-func (a *FixedEbitenUIApp) Update() error {
+func (a *EbitenUIApp) Update() error {
 	a.ui.Update()
 	
 	// セッションサービスを更新
@@ -263,14 +287,18 @@ func (a *FixedEbitenUIApp) Update() error {
 	return nil
 }
 
-func (a *FixedEbitenUIApp) Draw(screen *ebiten.Image) {
-	// 背景を黒で塗りつぶし
-	screen.Fill(color.RGBA{30, 30, 30, 255})
+func (a *EbitenUIApp) Draw(screen *ebiten.Image) {
+	// 背景を暗い色で塗りつぶし
+	screen.Fill(color.RGBA{25, 25, 25, 255})
 	
 	// ebitenuiを描画
 	a.ui.Draw(screen)
 	
-	// タイマー情報をオーバーレイで手動描画
+	// タイマー情報とボタンラベルをオーバーレイで描画
+	a.drawOverlayText(screen)
+}
+
+func (a *EbitenUIApp) drawOverlayText(screen *ebiten.Image) {
 	session := a.sessionService.GetSession()
 	remaining := session.GetTimeRemaining()
 	minutes := int(remaining.Minutes())
@@ -281,26 +309,47 @@ func (a *FixedEbitenUIApp) Draw(screen *ebiten.Image) {
 	statusText := ""
 	switch sessionState {
 	case domain.WorkSession:
-		statusText = "Work Session"
+		if session.IsSessionPaused() {
+			statusText = "Work Session (Paused)"
+		} else {
+			statusText = "Work Session"
+		}
 	case domain.BreakSession:
-		statusText = "Break Session"
+		if session.IsSessionPaused() {
+			statusText = "Break Session (Paused)"
+		} else {
+			statusText = "Break Session"
+		}
 	default:
 		statusText = "Ready to start"
 	}
 	
-	// テキストを手動描画（上部中央）
-	bounds := text.BoundString(basicfont.Face7x13, timerText)
-	timerX := screen.Bounds().Dx()/2 - bounds.Dx()/2
-	timerY := 50
+	// タイマーテキストを描画（上部中央）
+	timerBounds := text.BoundString(basicfont.Face7x13, timerText)
+	timerX := screen.Bounds().Dx()/2 - timerBounds.Dx()/2
+	timerY := 60
 	text.Draw(screen, timerText, basicfont.Face7x13, timerX, timerY, color.White)
 	
-	// ステータステキストを描画（タイマーの下）
+	// ステータステキストを描画
 	statusBounds := text.BoundString(basicfont.Face7x13, statusText)
 	statusX := screen.Bounds().Dx()/2 - statusBounds.Dx()/2
-	statusY := 80
+	statusY := 90
 	text.Draw(screen, statusText, basicfont.Face7x13, statusX, statusY, color.RGBA{200, 200, 200, 255})
+	
+	// ボタンラベルを各ボタンの上に描画
+	buttonY := 220 // ボタンエリアの開始位置
+	for button, label := range a.buttonLabels {
+		if button.GetWidget().Disabled {
+			continue
+		}
+		
+		labelBounds := text.BoundString(basicfont.Face7x13, label)
+		labelX := screen.Bounds().Dx()/2 - labelBounds.Dx()/2
+		text.Draw(screen, label, basicfont.Face7x13, labelX, buttonY, color.White)
+		buttonY += 80 // 次のボタンの位置
+	}
 }
 
-func (a *FixedEbitenUIApp) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+func (a *EbitenUIApp) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return outsideWidth, outsideHeight
 }
