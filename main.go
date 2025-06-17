@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	app := presentation.NewApp()
-	if err := app.Run(); err != nil {
+	app, audioService := presentation.NewApp()
+	if err := app.Run(audioService); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -13,14 +13,13 @@ import (
 
 type App struct {
 	sessionService      *application.SessionService
-	audioService        *application.AudioService
-	notificationService *application.NotificationService
 	configService       *application.ConfigService
 	
 	currentScreen   Screen
 	isFullscreen    bool
 	buttonManager   *ButtonManager
 	screenRenderer  *ScreenRenderer
+	eventHandler    *EventHandler
 }
 
 type Screen int
@@ -37,28 +36,45 @@ type Button struct {
 	Hovered    bool
 }
 
-func NewApp() *App {
+func NewApp() (*App, *application.AudioService) {
+	audioService := application.NewAudioService()
+	notificationService := application.NewNotificationService()
+	
 	app := &App{
 		sessionService:      application.NewSessionService(),
-		audioService:        application.NewAudioService(),
-		notificationService: application.NewNotificationService(),
 		configService:       application.NewConfigService(),
 		currentScreen:       MainScreen,
 		isFullscreen:        false,
 		buttonManager:       NewButtonManager(),
 		screenRenderer:      NewScreenRenderer(),
+		eventHandler:        NewEventHandler(audioService, notificationService),
 	}
 	
 	app.setupEventCallbacks()
 	app.setupButtons()
 	
-	return app
+	return app, audioService
 }
 
 func (a *App) setupEventCallbacks() {
+	a.eventHandler.SetupCallbacks(
+		a.sessionService,
+		func() {
+			a.currentScreen = FullscreenOverlay
+			a.isFullscreen = true
+			screenWidth, screenHeight := ebiten.WindowSize()
+			a.buttonManager.SetupEndOfWorkButtons(screenWidth, screenHeight, a.sessionService)
+		},
+		func() {
+			a.currentScreen = FullscreenOverlay
+			a.isFullscreen = true
+			screenWidth, screenHeight := ebiten.WindowSize()
+			a.buttonManager.SetupEndOfBreakButtons(screenWidth, screenHeight, a.sessionService)
+		},
+	)
+	
+	// Handle session start events that need screen changes
 	a.sessionService.AddEventCallback(domain.EventWorkSessionStart, func() {
-		a.audioService.PlayStartSound()
-		a.notificationService.ShowWorkSessionStart()
 		a.currentScreen = MainScreen
 		if a.isFullscreen {
 			ebiten.SetFullscreen(false)
@@ -67,48 +83,11 @@ func (a *App) setupEventCallbacks() {
 	})
 	
 	a.sessionService.AddEventCallback(domain.EventBreakSessionStart, func() {
-		a.audioService.PlayStartSound()
-		a.notificationService.ShowBreakSessionStart()
 		a.currentScreen = MainScreen
 		if a.isFullscreen {
 			ebiten.SetFullscreen(false)
 			a.isFullscreen = false
 		}
-	})
-	
-	a.sessionService.AddEventCallback(domain.EventWorkSessionEnd, func() {
-		a.audioService.PlayEndSound()
-		a.notificationService.ShowWorkSessionEnd()
-		a.currentScreen = FullscreenOverlay
-		ebiten.SetFullscreen(true)
-		a.isFullscreen = true
-		screenWidth, screenHeight := ebiten.WindowSize()
-		a.buttonManager.SetupEndOfWorkButtons(screenWidth, screenHeight, a.sessionService)
-	})
-	
-	a.sessionService.AddEventCallback(domain.EventBreakSessionEnd, func() {
-		a.audioService.PlayEndSound()
-		a.notificationService.ShowBreakSessionEnd()
-		a.currentScreen = FullscreenOverlay
-		ebiten.SetFullscreen(true)
-		a.isFullscreen = true
-		screenWidth, screenHeight := ebiten.WindowSize()
-		a.buttonManager.SetupEndOfBreakButtons(screenWidth, screenHeight, a.sessionService)
-	})
-	
-	a.sessionService.AddEventCallback(domain.EventWarning, func() {
-		a.audioService.PlayWarningSound()
-		a.notificationService.ShowWarning()
-	})
-	
-	a.sessionService.AddEventCallback(domain.EventSessionPause, func() {
-		a.audioService.PlayBeep(400, 100*time.Millisecond)
-		a.notificationService.ShowSessionPaused()
-	})
-	
-	a.sessionService.AddEventCallback(domain.EventSessionResume, func() {
-		a.audioService.PlayBeep(600, 100*time.Millisecond)
-		a.notificationService.ShowSessionResumed()
 	})
 }
 
@@ -170,13 +149,13 @@ func (a *App) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight
 	return outsideWidth, outsideHeight
 }
 
-func (a *App) Run() error {
+func (a *App) Run(audioService *application.AudioService) error {
 	ebiten.SetWindowSize(WindowWidth, WindowHeight)
 	ebiten.SetWindowTitle(WindowTitle)
 	ebiten.SetWindowClosingHandled(true)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	
-	if !a.audioService.WaitForReady(5 * time.Second) {
+	if !audioService.WaitForReady(5 * time.Second) {
 		fmt.Println("Warning: Audio system initialization timeout")
 	}
 	
