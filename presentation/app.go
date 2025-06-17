@@ -57,7 +57,7 @@ func NewApp() *App {
 }
 
 func (a *App) setupEventCallbacks() {
-	a.sessionService.AddEventCallback("work_session_start", func() {
+	a.sessionService.AddEventCallback(domain.EventWorkSessionStart, func() {
 		a.audioService.PlayStartSound()
 		a.notificationService.ShowWorkSessionStart()
 		a.currentScreen = MainScreen
@@ -67,7 +67,7 @@ func (a *App) setupEventCallbacks() {
 		}
 	})
 	
-	a.sessionService.AddEventCallback("break_session_start", func() {
+	a.sessionService.AddEventCallback(domain.EventBreakSessionStart, func() {
 		a.audioService.PlayStartSound()
 		a.notificationService.ShowBreakSessionStart()
 		a.currentScreen = MainScreen
@@ -77,7 +77,7 @@ func (a *App) setupEventCallbacks() {
 		}
 	})
 	
-	a.sessionService.AddEventCallback("work_session_end", func() {
+	a.sessionService.AddEventCallback(domain.EventWorkSessionEnd, func() {
 		a.audioService.PlayEndSound()
 		a.notificationService.ShowWorkSessionEnd()
 		a.currentScreen = FullscreenOverlay
@@ -86,7 +86,7 @@ func (a *App) setupEventCallbacks() {
 		a.setupEndOfWorkButtons()
 	})
 	
-	a.sessionService.AddEventCallback("break_session_end", func() {
+	a.sessionService.AddEventCallback(domain.EventBreakSessionEnd, func() {
 		a.audioService.PlayEndSound()
 		a.notificationService.ShowBreakSessionEnd()
 		a.currentScreen = FullscreenOverlay
@@ -95,17 +95,17 @@ func (a *App) setupEventCallbacks() {
 		a.setupEndOfBreakButtons()
 	})
 	
-	a.sessionService.AddEventCallback("warning", func() {
+	a.sessionService.AddEventCallback(domain.EventWarning, func() {
 		a.audioService.PlayWarningSound()
 		a.notificationService.ShowWarning()
 	})
 	
-	a.sessionService.AddEventCallback("session_pause", func() {
+	a.sessionService.AddEventCallback(domain.EventSessionPause, func() {
 		a.audioService.PlayBeep(400, 100*time.Millisecond)
 		a.notificationService.ShowSessionPaused()
 	})
 	
-	a.sessionService.AddEventCallback("session_resume", func() {
+	a.sessionService.AddEventCallback(domain.EventSessionResume, func() {
 		a.audioService.PlayBeep(600, 100*time.Millisecond)
 		a.notificationService.ShowSessionResumed()
 	})
@@ -272,20 +272,20 @@ func (a *App) drawWorkSession(screen *ebiten.Image) {
 	
 	timerText := fmt.Sprintf("%02d:%02d", int(remaining.Minutes()), int(remaining.Seconds())%60)
 	// Draw timer background for better visibility
-	timerBg := color.RGBA{R: 0, G: 0, B: 0, A: 100}
-	timerX, timerY := screenWidth/2-60, screenHeight/2-110
-	a.drawRect(screen, timerX, timerY, 120, 30, timerBg)
-	ebitenutil.DebugPrintAt(screen, timerText, screenWidth/2-50, screenHeight/2-100)
+	timerX := screenWidth/2 - TimerOffsetX
+	timerY := screenHeight/2 - TimerOffsetY
+	a.drawRect(screen, timerX, timerY, TimerBoxWidth, TimerBoxHeight, BlackShadow)
+	ebitenutil.DebugPrintAt(screen, timerText, screenWidth/2-TimerOffsetX+10, screenHeight/2-TimerOffsetY+10)
 	
 	// Draw progress bar
 	a.drawProgressBar(screen, session.GetProgress(), screenWidth, screenHeight)
 	
 	if session.IsSessionPaused() {
-		ebitenutil.DebugPrintAt(screen, PausedText, screenWidth/2-30, screenHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, ResumeInstructionText, screenWidth/2-80, screenHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, PausedText, screenWidth/2-len(PausedText)*TextCharWidth, screenHeight/2-TextLineHeight)
+		ebitenutil.DebugPrintAt(screen, ResumeInstructionText, screenWidth/2-len(ResumeInstructionText)*TextCharWidth, screenHeight/2-20)
 	} else {
-		ebitenutil.DebugPrintAt(screen, WorkingText, screenWidth/2-30, screenHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, PauseInstructionText, screenWidth/2-80, screenHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, WorkingText, screenWidth/2-len(WorkingText)*TextCharWidth, screenHeight/2-TextLineHeight)
+		ebitenutil.DebugPrintAt(screen, PauseInstructionText, screenWidth/2-len(PauseInstructionText)*TextCharWidth, screenHeight/2-20)
 	}
 }
 
@@ -298,26 +298,26 @@ func (a *App) drawBreakSession(screen *ebiten.Image) {
 	
 	timerText := fmt.Sprintf("%02d:%02d", int(remaining.Minutes()), int(remaining.Seconds())%60)
 	// Draw timer background for better visibility
-	timerBg := color.RGBA{R: 0, G: 0, B: 0, A: 100}
-	timerX, timerY := screenWidth/2-60, screenHeight/2-110
-	a.drawRect(screen, timerX, timerY, 120, 30, timerBg)
-	ebitenutil.DebugPrintAt(screen, timerText, screenWidth/2-50, screenHeight/2-100)
+	timerX := screenWidth/2 - TimerOffsetX
+	timerY := screenHeight/2 - TimerOffsetY
+	a.drawRect(screen, timerX, timerY, TimerBoxWidth, TimerBoxHeight, BlackShadow)
+	ebitenutil.DebugPrintAt(screen, timerText, screenWidth/2-TimerOffsetX+10, screenHeight/2-TimerOffsetY+10)
 	
 	// Draw progress bar
 	a.drawProgressBar(screen, session.GetProgress(), screenWidth, screenHeight)
 	
 	if session.IsSessionPaused() {
-		ebitenutil.DebugPrintAt(screen, PausedText, screenWidth/2-30, screenHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, ResumeInstructionText, screenWidth/2-80, screenHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, PausedText, screenWidth/2-len(PausedText)*TextCharWidth, screenHeight/2-TextLineHeight)
+		ebitenutil.DebugPrintAt(screen, ResumeInstructionText, screenWidth/2-len(ResumeInstructionText)*TextCharWidth, screenHeight/2-20)
 	} else {
-		ebitenutil.DebugPrintAt(screen, BreakText, screenWidth/2-40, screenHeight/2-50)
-		ebitenutil.DebugPrintAt(screen, PauseInstructionText, screenWidth/2-80, screenHeight/2-20)
+		ebitenutil.DebugPrintAt(screen, BreakText, screenWidth/2-len(BreakText)*TextCharWidth, screenHeight/2-TextLineHeight)
+		ebitenutil.DebugPrintAt(screen, PauseInstructionText, screenWidth/2-len(PauseInstructionText)*TextCharWidth, screenHeight/2-20)
 	}
 }
 
 func (a *App) drawIdleScreen(screen *ebiten.Image) {
 	screenWidth, screenHeight := ebiten.WindowSize()
-	ebitenutil.DebugPrintAt(screen, IdleScreenMessage, screenWidth/2-100, screenHeight/2-150)
+	ebitenutil.DebugPrintAt(screen, IdleScreenMessage, screenWidth/2-len(IdleScreenMessage)*TextCharWidth, screenHeight/2-IdleMessageOffset)
 	
 	a.drawButtons(screen)
 }
@@ -327,7 +327,7 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 	screenWidth, screenHeight := ebiten.WindowSize()
 	
 	// 強制的な赤い背景で注意を引く
-	screen.Fill(color.RGBA{R: 180, G: 0, B: 0, A: 255})
+	screen.Fill(ForceRedBackground)
 	
 	var message string
 	if session.GetSessionType() == domain.Work {
@@ -337,23 +337,23 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 	}
 	
 	// メッセージを大きく強調表示
-	messageX := screenWidth/2 - len(message)*4
+	messageX := screenWidth/2 - len(message)*TextCharWidthLg
 	messageY := screenHeight/3
 	
 	// 背景の強調ボックス
-	boxWidth := len(message) * 8 + 40
-	boxHeight := 60
+	boxWidth := len(message)*8 + MessageBoxPadding
+	boxHeight := MessageBoxHeight
 	boxX := screenWidth/2 - boxWidth/2
 	boxY := messageY - 20
-	a.drawRect(screen, boxX, boxY, boxWidth, boxHeight, color.RGBA{R: 255, G: 255, B: 0, A: 200})
-	a.drawBorder(screen, boxX, boxY, boxWidth, boxHeight, color.RGBA{R: 255, G: 255, B: 255, A: 255}, 3)
+	a.drawRect(screen, boxX, boxY, boxWidth, boxHeight, ForceYellowBox)
+	a.drawBorder(screen, boxX, boxY, boxWidth, boxHeight, WhiteBorder, MessageBoxBorderWidth)
 	
 	ebitenutil.DebugPrintAt(screen, message, messageX, messageY)
 	
 	// 警告メッセージを追加
 	warningMsg := "YOU CANNOT CONTINUE UNTIL YOU CHOOSE!"
-	warningX := screenWidth/2 - len(warningMsg)*3
-	warningY := screenHeight/2 - 50
+	warningX := screenWidth/2 - len(warningMsg)*TextCharWidth
+	warningY := screenHeight/2 - TextLineHeight
 	ebitenutil.DebugPrintAt(screen, warningMsg, warningX, warningY)
 	
 	a.drawButtons(screen)
@@ -362,8 +362,7 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 func (a *App) drawButtons(screen *ebiten.Image) {
 	for _, button := range a.buttons {
 		// Draw button shadow
-		shadowColor := color.RGBA{R: 0, G: 0, B: 0, A: 50}
-		a.drawRect(screen, button.X+2, button.Y+2, button.W, button.H, shadowColor)
+		a.drawRect(screen, button.X+ButtonShadowOffset, button.Y+ButtonShadowOffset, button.W, button.H, ButtonShadow)
 		
 		// Draw button background
 		buttonColor := ButtonColor
@@ -373,12 +372,11 @@ func (a *App) drawButtons(screen *ebiten.Image) {
 		a.drawRect(screen, button.X, button.Y, button.W, button.H, buttonColor)
 		
 		// Draw button border
-		borderColor := color.RGBA{R: 200, G: 200, B: 200, A: 255}
-		a.drawBorder(screen, button.X, button.Y, button.W, button.H, borderColor, 2)
+		a.drawBorder(screen, button.X, button.Y, button.W, button.H, GrayBorder, ButtonBorderWidth)
 		
 		// Draw button text (centered)
-		textX := button.X + button.W/2 - len(button.Text)*3
-		textY := button.Y + button.H/2 - 6
+		textX := button.X + button.W/2 - len(button.Text)*TextCharWidth
+		textY := button.Y + button.H/2 - TextCharHeight
 		ebitenutil.DebugPrintAt(screen, button.Text, textX, textY)
 	}
 }
@@ -403,36 +401,29 @@ func (a *App) drawBorder(screen *ebiten.Image, x, y, w, h int, c color.Color, th
 }
 
 func (a *App) drawProgressBar(screen *ebiten.Image, progress float64, screenWidth, screenHeight int) {
-	barWidth := 300
-	barHeight := 10
-	barX := screenWidth/2 - barWidth/2
-	barY := screenHeight/2 + 40
+	barX := screenWidth/2 - ProgressBarWidth/2
+	barY := screenHeight/2 + ProgressBarOffsetY
 	
 	// Draw progress bar background
-	bgColor := color.RGBA{R: 60, G: 60, B: 60, A: 255}
-	a.drawRect(screen, barX, barY, barWidth, barHeight, bgColor)
+	a.drawRect(screen, barX, barY, ProgressBarWidth, ProgressBarHeight, ProgressBarBg)
 	
 	// Draw progress bar fill
-	progressWidth := int(float64(barWidth) * progress)
-	progressColor := color.RGBA{R: 100, G: 200, B: 100, A: 255}
+	progressWidth := int(float64(ProgressBarWidth) * progress)
 	if progressWidth > 0 {
-		a.drawRect(screen, barX, barY, progressWidth, barHeight, progressColor)
+		a.drawRect(screen, barX, barY, progressWidth, ProgressBarHeight, ProgressBarFill)
 	}
 	
 	// Draw progress bar border
-	borderColor := color.RGBA{R: 180, G: 180, B: 180, A: 255}
-	a.drawBorder(screen, barX, barY, barWidth, barHeight, borderColor, 1)
+	a.drawBorder(screen, barX, barY, ProgressBarWidth, ProgressBarHeight, ProgressBarBorder, 1)
 }
 
 func (a *App) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	// Allow dynamic resizing but set minimum size
-	minWidth, minHeight := 600, 400
-	
-	if outsideWidth < minWidth {
-		outsideWidth = minWidth
+	if outsideWidth < MinWindowWidth {
+		outsideWidth = MinWindowWidth
 	}
-	if outsideHeight < minHeight {
-		outsideHeight = minHeight
+	if outsideHeight < MinWindowHeight {
+		outsideHeight = MinWindowHeight
 	}
 	
 	return outsideWidth, outsideHeight

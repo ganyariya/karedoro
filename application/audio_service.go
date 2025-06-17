@@ -3,11 +3,48 @@ package application
 import (
 	"bytes"
 	"context"
-	"io"
 	"math"
 	"time"
 
 	"github.com/ebitengine/oto/v3"
+)
+
+const (
+	// Audio system constants
+	SampleRate   = 44100
+	ChannelCount = 2
+	DefaultVolume = 0.7
+	
+	// Audio generation constants
+	MaxAmplitude = 32767
+	BaseAmplitude = 0.3
+	Harmonic2Amplitude = 0.3
+	Harmonic3Amplitude = 0.1
+	
+	// Sound frequencies and durations
+	StartSoundFreq = 800
+	StartSoundDuration = 200 * time.Millisecond
+	
+	EndSound1Freq = 600
+	EndSound1Duration = 200 * time.Millisecond
+	EndSound2Freq = 800
+	EndSound2Duration = 200 * time.Millisecond
+	EndSound3Freq = 1000
+	EndSound3Duration = 300 * time.Millisecond
+	EndSound4Freq = 1200
+	EndSound4Duration = 400 * time.Millisecond
+	EndSoundGap = 50 * time.Millisecond
+	EndSoundLongGap = 100 * time.Millisecond
+	
+	WarningHighFreq = 1400
+	WarningLowFreq = 800
+	WarningDuration = 200 * time.Millisecond
+	WarningGap = 100 * time.Millisecond
+	WarningCycles = 5
+	
+	PauseBeepFreq = 400
+	ResumeBeepFreq = 600
+	BeepDuration = 100 * time.Millisecond
 )
 
 type AudioService struct {
@@ -21,7 +58,7 @@ func NewAudioService() *AudioService {
 	service := &AudioService{
 		readyChannel: make(chan struct{}),
 		isReady:      false,
-		volume:       0.7,
+		volume:       DefaultVolume,
 	}
 	
 	go service.initialize()
@@ -31,8 +68,8 @@ func NewAudioService() *AudioService {
 
 func (a *AudioService) initialize() {
 	op := &oto.NewContextOptions{
-		SampleRate:   44100,
-		ChannelCount: 2,
+		SampleRate:   SampleRate,
+		ChannelCount: ChannelCount,
 		Format:       oto.FormatSignedInt16LE,
 	}
 	
@@ -66,17 +103,16 @@ func (a *AudioService) PlayBeep(frequency float64, duration time.Duration) error
 		return nil
 	}
 	
-	sampleRate := 44100
-	samples := int(float64(sampleRate) * duration.Seconds())
+	samples := int(float64(SampleRate) * duration.Seconds())
 	
 	buf := make([]byte, samples*4)
 	
 	for i := 0; i < samples; i++ {
-		t := float64(i) / float64(sampleRate)
-		sample := int16(32767 * a.volume * 0.3 * 
+		t := float64(i) / float64(SampleRate)
+		sample := int16(MaxAmplitude * a.volume * BaseAmplitude * 
 			(math.Sin(2*math.Pi*frequency*t) + 
-			 math.Sin(2*math.Pi*frequency*2*t)*0.3 + 
-			 math.Sin(2*math.Pi*frequency*3*t)*0.1))
+			 math.Sin(2*math.Pi*frequency*2*t)*Harmonic2Amplitude + 
+			 math.Sin(2*math.Pi*frequency*3*t)*Harmonic3Amplitude))
 		
 		buf[i*4] = byte(sample)
 		buf[i*4+1] = byte(sample >> 8)
@@ -88,36 +124,36 @@ func (a *AudioService) PlayBeep(frequency float64, duration time.Duration) error
 	go func() {
 		defer player.Close()
 		player.Play()
-		time.Sleep(duration + 100*time.Millisecond)
+		time.Sleep(duration + BeepDuration)
 	}()
 	
 	return nil
 }
 
 func (a *AudioService) PlayStartSound() error {
-	return a.PlayBeep(800, 200*time.Millisecond)
+	return a.PlayBeep(StartSoundFreq, StartSoundDuration)
 }
 
 func (a *AudioService) PlayEndSound() error {
 	// セッション終了を強力に通知
-	a.PlayBeep(600, 200*time.Millisecond)
-	time.Sleep(50 * time.Millisecond)
-	a.PlayBeep(800, 200*time.Millisecond)
-	time.Sleep(50 * time.Millisecond)
-	a.PlayBeep(1000, 300*time.Millisecond)
-	time.Sleep(100 * time.Millisecond)
+	a.PlayBeep(EndSound1Freq, EndSound1Duration)
+	time.Sleep(EndSoundGap)
+	a.PlayBeep(EndSound2Freq, EndSound2Duration)
+	time.Sleep(EndSoundGap)
+	a.PlayBeep(EndSound3Freq, EndSound3Duration)
+	time.Sleep(EndSoundLongGap)
 	// 追加の強調音
-	a.PlayBeep(1200, 400*time.Millisecond)
+	a.PlayBeep(EndSound4Freq, EndSound4Duration)
 	return nil
 }
 
 func (a *AudioService) PlayWarningSound() error {
 	// より強力で持続的な警告音を再生
-	for i := 0; i < 5; i++ {
-		a.PlayBeep(1400, 200*time.Millisecond) // 高い周波数で長時間
-		time.Sleep(100 * time.Millisecond)
-		a.PlayBeep(800, 200*time.Millisecond)  // 低い周波数で対比
-		time.Sleep(100 * time.Millisecond)
+	for i := 0; i < WarningCycles; i++ {
+		a.PlayBeep(WarningHighFreq, WarningDuration) // 高い周波数で長時間
+		time.Sleep(WarningGap)
+		a.PlayBeep(WarningLowFreq, WarningDuration)  // 低い周波数で対比
+		time.Sleep(WarningGap)
 	}
 	return nil
 }
@@ -136,17 +172,3 @@ func (a *AudioService) Close() error {
 	return nil
 }
 
-func (a *AudioService) playFromReader(reader io.Reader) error {
-	if !a.isReady {
-		return nil
-	}
-	
-	player := a.context.NewPlayer(reader)
-	go func() {
-		defer player.Close()
-		player.Play()
-		time.Sleep(2 * time.Second)
-	}()
-	
-	return nil
-}

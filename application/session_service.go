@@ -26,7 +26,7 @@ func (s *SessionService) StartWorkSession() error {
 		return err
 	}
 	
-	s.triggerEvent("work_session_start")
+	s.triggerEvent(domain.EventWorkSessionStart)
 	return nil
 }
 
@@ -36,7 +36,7 @@ func (s *SessionService) StartBreakSession() error {
 		return err
 	}
 	
-	s.triggerEvent("break_session_start")
+	s.triggerEvent(domain.EventBreakSessionStart)
 	return nil
 }
 
@@ -46,7 +46,7 @@ func (s *SessionService) PauseSession() error {
 		return err
 	}
 	
-	s.triggerEvent("session_pause")
+	s.triggerEvent(domain.EventSessionPause)
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (s *SessionService) ResumeSession() error {
 		return err
 	}
 	
-	s.triggerEvent("session_resume")
+	s.triggerEvent(domain.EventSessionResume)
 	return nil
 }
 
@@ -67,7 +67,7 @@ func (s *SessionService) Update() {
 	
 	// 待機状態で警告タイマーが終了したら、強制的に警告を発動
 	if shouldShowWarning && s.session.GetState() == domain.Idle {
-		s.triggerEvent("warning")
+		s.triggerEvent(domain.EventWarning)
 		s.session.ResetWarningTimer()
 	}
 }
@@ -95,17 +95,17 @@ func (s *SessionService) onStateChange(oldState, newState domain.SessionState) {
 	switch newState {
 	case domain.WorkSession:
 		if oldState == domain.Idle {
-			s.triggerEvent("work_session_start")
+			s.triggerEvent(domain.EventWorkSessionStart)
 		}
 	case domain.BreakSession:
 		if oldState == domain.Idle {
-			s.triggerEvent("break_session_start")
+			s.triggerEvent(domain.EventBreakSessionStart)
 		}
 	case domain.Idle:
 		if oldState == domain.WorkSession {
-			s.triggerEvent("work_session_end")
+			s.triggerEvent(domain.EventWorkSessionEnd)
 		} else if oldState == domain.BreakSession {
-			s.triggerEvent("break_session_end")
+			s.triggerEvent(domain.EventBreakSessionEnd)
 		}
 	}
 }

@@ -8,6 +8,17 @@ const (
 	WarningInterval        = 5 * time.Minute
 )
 
+// Event name constants
+const (
+	EventWorkSessionStart  = "work_session_start"
+	EventBreakSessionStart = "break_session_start"
+	EventWorkSessionEnd    = "work_session_end"
+	EventBreakSessionEnd   = "break_session_end"
+	EventWarning           = "warning"
+	EventSessionPause      = "session_pause"
+	EventSessionResume     = "session_resume"
+)
+
 type SessionState int
 
 const (
