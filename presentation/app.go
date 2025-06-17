@@ -2,7 +2,6 @@ package presentation
 
 import (
 	"fmt"
-	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -19,10 +18,9 @@ type App struct {
 	notificationService *application.NotificationService
 	configService       *application.ConfigService
 	
-	currentScreen Screen
-	isFullscreen  bool
-	
-	buttons []Button
+	currentScreen   Screen
+	isFullscreen    bool
+	buttonManager   *ButtonManager
 }
 
 type Screen int
@@ -47,7 +45,7 @@ func NewApp() *App {
 		configService:       application.NewConfigService(),
 		currentScreen:       MainScreen,
 		isFullscreen:        false,
-		buttons:            make([]Button, 0),
+		buttonManager:       NewButtonManager(),
 	}
 	
 	app.setupEventCallbacks()
@@ -83,7 +81,8 @@ func (a *App) setupEventCallbacks() {
 		a.currentScreen = FullscreenOverlay
 		ebiten.SetFullscreen(true)
 		a.isFullscreen = true
-		a.setupEndOfWorkButtons()
+		screenWidth, screenHeight := ebiten.WindowSize()
+		a.buttonManager.SetupEndOfWorkButtons(screenWidth, screenHeight, a.sessionService)
 	})
 	
 	a.sessionService.AddEventCallback(domain.EventBreakSessionEnd, func() {
@@ -92,7 +91,8 @@ func (a *App) setupEventCallbacks() {
 		a.currentScreen = FullscreenOverlay
 		ebiten.SetFullscreen(true)
 		a.isFullscreen = true
-		a.setupEndOfBreakButtons()
+		screenWidth, screenHeight := ebiten.WindowSize()
+		a.buttonManager.SetupEndOfBreakButtons(screenWidth, screenHeight, a.sessionService)
 	})
 	
 	a.sessionService.AddEventCallback(domain.EventWarning, func() {
@@ -113,74 +113,9 @@ func (a *App) setupEventCallbacks() {
 
 func (a *App) setupButtons() {
 	screenWidth, screenHeight := ebiten.WindowSize()
-	
-	a.buttons = []Button{
-		{
-			X: screenWidth/2 - ButtonWidth/2,
-			Y: screenHeight/2 - ButtonHeight - ButtonPadding,
-			W: ButtonWidth,
-			H: ButtonHeight,
-			Text: StartWorkButtonText,
-			Action: func() {
-				a.sessionService.StartWorkSession()
-			},
-		},
-		{
-			X: screenWidth/2 - ButtonWidth/2,
-			Y: screenHeight/2 + ButtonPadding,
-			W: ButtonWidth,
-			H: ButtonHeight,
-			Text: StartBreakButtonText,
-			Action: func() {
-				a.sessionService.StartBreakSession()
-			},
-		},
-	}
+	a.buttonManager.SetupMainButtons(screenWidth, screenHeight, a.sessionService)
 }
 
-func (a *App) setupEndOfWorkButtons() {
-	screenWidth, screenHeight := ebiten.WindowSize()
-	
-	a.buttons = []Button{
-		{
-			X: screenWidth/2 - ButtonWidth/2,
-			Y: screenHeight/2 - ButtonHeight - ButtonPadding,
-			W: ButtonWidth,
-			H: ButtonHeight,
-			Text: StartBreakButtonText,
-			Action: func() {
-				a.sessionService.StartBreakSession()
-			},
-		},
-		{
-			X: screenWidth/2 - ButtonWidth/2,
-			Y: screenHeight/2 + ButtonPadding,
-			W: ButtonWidth,
-			H: ButtonHeight,
-			Text: SkipBreakButtonText,
-			Action: func() {
-				a.sessionService.StartWorkSession()
-			},
-		},
-	}
-}
-
-func (a *App) setupEndOfBreakButtons() {
-	screenWidth, screenHeight := ebiten.WindowSize()
-	
-	a.buttons = []Button{
-		{
-			X: screenWidth/2 - ButtonWidth/2,
-			Y: screenHeight/2,
-			W: ButtonWidth,
-			H: ButtonHeight,
-			Text: StartWorkButtonText,
-			Action: func() {
-				a.sessionService.StartWorkSession()
-			},
-		},
-	}
-}
 
 func (a *App) Update() error {
 	a.sessionService.Update()
@@ -199,45 +134,16 @@ func (a *App) Update() error {
 	}
 	
 	a.updateButtonPositions()
-	a.updateButtons()
+	a.buttonManager.UpdateButtons()
 	
 	return nil
 }
 
 func (a *App) updateButtonPositions() {
 	screenWidth, screenHeight := ebiten.WindowSize()
-	
-	// Update button positions based on current screen size
-	for i := range a.buttons {
-		switch len(a.buttons) {
-		case 1: // End of break (single button)
-			a.buttons[i].X = screenWidth/2 - ButtonWidth/2
-			a.buttons[i].Y = screenHeight/2
-		case 2: // Main screen or end of work (two buttons)
-			if i == 0 {
-				a.buttons[i].X = screenWidth/2 - ButtonWidth/2
-				a.buttons[i].Y = screenHeight/2 - ButtonHeight - ButtonPadding
-			} else {
-				a.buttons[i].X = screenWidth/2 - ButtonWidth/2
-				a.buttons[i].Y = screenHeight/2 + ButtonPadding
-			}
-		}
-	}
+	a.buttonManager.UpdateButtonPositions(screenWidth, screenHeight)
 }
 
-func (a *App) updateButtons() {
-	mx, my := ebiten.CursorPosition()
-	
-	for i := range a.buttons {
-		button := &a.buttons[i]
-		button.Hovered = mx >= button.X && mx < button.X+button.W &&
-			my >= button.Y && my < button.Y+button.H
-		
-		if button.Hovered && inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			button.Action()
-		}
-	}
-}
 
 func (a *App) Draw(screen *ebiten.Image) {
 	screen.Fill(BackgroundColor)
@@ -274,7 +180,7 @@ func (a *App) drawWorkSession(screen *ebiten.Image) {
 	// Draw timer background for better visibility
 	timerX := screenWidth/2 - TimerOffsetX
 	timerY := screenHeight/2 - TimerOffsetY
-	a.drawRect(screen, timerX, timerY, TimerBoxWidth, TimerBoxHeight, BlackShadow)
+	drawRect(screen, timerX, timerY, TimerBoxWidth, TimerBoxHeight, BlackShadow)
 	ebitenutil.DebugPrintAt(screen, timerText, screenWidth/2-TimerOffsetX+10, screenHeight/2-TimerOffsetY+10)
 	
 	// Draw progress bar
@@ -300,7 +206,7 @@ func (a *App) drawBreakSession(screen *ebiten.Image) {
 	// Draw timer background for better visibility
 	timerX := screenWidth/2 - TimerOffsetX
 	timerY := screenHeight/2 - TimerOffsetY
-	a.drawRect(screen, timerX, timerY, TimerBoxWidth, TimerBoxHeight, BlackShadow)
+	drawRect(screen, timerX, timerY, TimerBoxWidth, TimerBoxHeight, BlackShadow)
 	ebitenutil.DebugPrintAt(screen, timerText, screenWidth/2-TimerOffsetX+10, screenHeight/2-TimerOffsetY+10)
 	
 	// Draw progress bar
@@ -319,7 +225,7 @@ func (a *App) drawIdleScreen(screen *ebiten.Image) {
 	screenWidth, screenHeight := ebiten.WindowSize()
 	ebitenutil.DebugPrintAt(screen, IdleScreenMessage, screenWidth/2-len(IdleScreenMessage)*TextCharWidth, screenHeight/2-IdleMessageOffset)
 	
-	a.drawButtons(screen)
+	a.buttonManager.DrawButtons(screen)
 }
 
 func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
@@ -345,8 +251,8 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 	boxHeight := MessageBoxHeight
 	boxX := screenWidth/2 - boxWidth/2
 	boxY := messageY - 20
-	a.drawRect(screen, boxX, boxY, boxWidth, boxHeight, ForceYellowBox)
-	a.drawBorder(screen, boxX, boxY, boxWidth, boxHeight, WhiteBorder, MessageBoxBorderWidth)
+	drawRect(screen, boxX, boxY, boxWidth, boxHeight, ForceYellowBox)
+	drawBorder(screen, boxX, boxY, boxWidth, boxHeight, WhiteBorder, MessageBoxBorderWidth)
 	
 	ebitenutil.DebugPrintAt(screen, message, messageX, messageY)
 	
@@ -356,65 +262,25 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 	warningY := screenHeight/2 - TextLineHeight
 	ebitenutil.DebugPrintAt(screen, warningMsg, warningX, warningY)
 	
-	a.drawButtons(screen)
+	a.buttonManager.DrawButtons(screen)
 }
 
-func (a *App) drawButtons(screen *ebiten.Image) {
-	for _, button := range a.buttons {
-		// Draw button shadow
-		a.drawRect(screen, button.X+ButtonShadowOffset, button.Y+ButtonShadowOffset, button.W, button.H, ButtonShadow)
-		
-		// Draw button background
-		buttonColor := ButtonColor
-		if button.Hovered {
-			buttonColor = ButtonHoverColor
-		}
-		a.drawRect(screen, button.X, button.Y, button.W, button.H, buttonColor)
-		
-		// Draw button border
-		a.drawBorder(screen, button.X, button.Y, button.W, button.H, GrayBorder, ButtonBorderWidth)
-		
-		// Draw button text (centered)
-		textX := button.X + button.W/2 - len(button.Text)*TextCharWidth
-		textY := button.Y + button.H/2 - TextCharHeight
-		ebitenutil.DebugPrintAt(screen, button.Text, textX, textY)
-	}
-}
-
-func (a *App) drawRect(screen *ebiten.Image, x, y, w, h int, c color.Color) {
-	for i := 0; i < w; i++ {
-		for j := 0; j < h; j++ {
-			screen.Set(x+i, y+j, c)
-		}
-	}
-}
-
-func (a *App) drawBorder(screen *ebiten.Image, x, y, w, h int, c color.Color, thickness int) {
-	// Top border
-	a.drawRect(screen, x, y, w, thickness, c)
-	// Bottom border
-	a.drawRect(screen, x, y+h-thickness, w, thickness, c)
-	// Left border
-	a.drawRect(screen, x, y, thickness, h, c)
-	// Right border
-	a.drawRect(screen, x+w-thickness, y, thickness, h, c)
-}
 
 func (a *App) drawProgressBar(screen *ebiten.Image, progress float64, screenWidth, screenHeight int) {
 	barX := screenWidth/2 - ProgressBarWidth/2
 	barY := screenHeight/2 + ProgressBarOffsetY
 	
 	// Draw progress bar background
-	a.drawRect(screen, barX, barY, ProgressBarWidth, ProgressBarHeight, ProgressBarBg)
+	drawRect(screen, barX, barY, ProgressBarWidth, ProgressBarHeight, ProgressBarBg)
 	
 	// Draw progress bar fill
 	progressWidth := int(float64(ProgressBarWidth) * progress)
 	if progressWidth > 0 {
-		a.drawRect(screen, barX, barY, progressWidth, ProgressBarHeight, ProgressBarFill)
+		drawRect(screen, barX, barY, progressWidth, ProgressBarHeight, ProgressBarFill)
 	}
 	
 	// Draw progress bar border
-	a.drawBorder(screen, barX, barY, ProgressBarWidth, ProgressBarHeight, ProgressBarBorder, 1)
+	drawBorder(screen, barX, barY, ProgressBarWidth, ProgressBarHeight, ProgressBarBorder, 1)
 }
 
 func (a *App) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
