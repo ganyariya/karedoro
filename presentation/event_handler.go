@@ -10,11 +10,11 @@ import (
 )
 
 type EventHandler struct {
-	audioService        *application.AudioService
-	notificationService *application.NotificationService
+	audioService        domain.AudioPlayer
+	notificationService domain.NotificationSender
 }
 
-func NewEventHandler(audioService *application.AudioService, notificationService *application.NotificationService) *EventHandler {
+func NewEventHandler(audioService domain.AudioPlayer, notificationService domain.NotificationSender) *EventHandler {
 	return &EventHandler{
 		audioService:        audioService,
 		notificationService: notificationService,

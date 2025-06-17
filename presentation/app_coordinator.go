@@ -101,3 +101,19 @@ func (ac *AppCoordinator) RunSetup(audioService *application.AudioService) error
 	
 	return nil
 }
+
+func (ac *AppCoordinator) RunSetupWithServices() error {
+	ebiten.SetWindowSize(WindowWidth, WindowHeight)
+	ebiten.SetWindowTitle(WindowTitle)
+	ebiten.SetWindowClosingHandled(true)
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
+	
+	// Wait for audio service to be ready if it's an AudioService
+	if audioService, ok := ac.eventHandler.audioService.(*application.AudioService); ok {
+		if !audioService.WaitForReady(5 * time.Second) {
+			fmt.Println("Warning: Audio system initialization timeout")
+		}
+	}
+	
+	return nil
+}

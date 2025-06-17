@@ -41,6 +41,17 @@ func NewApp() (*App, *application.AudioService) {
 	return app, audioService
 }
 
+// NewAppWithServices creates a new App with dependency injection.
+func NewAppWithServices(services *application.Services) *App {
+	eventHandler := NewEventHandler(services.Audio, services.Notification)
+	coordinator := NewAppCoordinator(services.Session, services.Config, eventHandler)
+	coordinator.Initialize()
+	
+	return &App{
+		coordinator: coordinator,
+	}
+}
+
 
 
 
@@ -66,8 +77,17 @@ func (a *App) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight
 	return outsideWidth, outsideHeight
 }
 
-func (a *App) Run(audioService *application.AudioService) error {
+func (a *App) RunWithAudioService(audioService *application.AudioService) error {
 	if err := a.coordinator.RunSetup(audioService); err != nil {
+		return err
+	}
+	
+	return ebiten.RunGame(a)
+}
+
+// Run runs the application with dependency injection (no audio service parameter needed).
+func (a *App) Run() error {
+	if err := a.coordinator.RunSetupWithServices(); err != nil {
 		return err
 	}
 	

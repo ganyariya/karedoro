@@ -7,6 +7,7 @@ type AudioPlayer interface {
 	PlayStartSound() error
 	PlayEndSound() error
 	PlayWarningSound() error
+	PlayBeep(frequency float64, duration time.Duration) error
 	IsReady() bool
 }
 
@@ -14,7 +15,11 @@ type AudioPlayer interface {
 type NotificationSender interface {
 	ShowWorkSessionStart() error
 	ShowBreakSessionStart() error
+	ShowWorkSessionEnd() error
+	ShowBreakSessionEnd() error
 	ShowWarning() error
+	ShowSessionPaused() error
+	ShowSessionResumed() error
 }
 
 // ConfigRepository handles configuration persistence.
