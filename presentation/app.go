@@ -51,7 +51,10 @@ func NewApp() (*App, *application.AudioService) {
 	}
 	
 	app.setupEventCallbacks()
-	app.setupButtons()
+	
+	// Setup initial buttons
+	screenWidth, screenHeight := ebiten.WindowSize()
+	app.buttonManager.SetupMainButtons(screenWidth, screenHeight, app.sessionService)
 	
 	return app, audioService
 }
@@ -91,10 +94,6 @@ func (a *App) setupEventCallbacks() {
 	})
 }
 
-func (a *App) setupButtons() {
-	screenWidth, screenHeight := ebiten.WindowSize()
-	a.buttonManager.SetupMainButtons(screenWidth, screenHeight, a.sessionService)
-}
 
 
 func (a *App) Update() error {
@@ -113,15 +112,12 @@ func (a *App) Update() error {
 		}
 	}
 	
-	a.updateButtonPositions()
+	// Update button positions and handle interactions
+	screenWidth, screenHeight := ebiten.WindowSize()
+	a.buttonManager.UpdateButtonPositions(screenWidth, screenHeight)
 	a.buttonManager.UpdateButtons()
 	
 	return nil
-}
-
-func (a *App) updateButtonPositions() {
-	screenWidth, screenHeight := ebiten.WindowSize()
-	a.buttonManager.UpdateButtonPositions(screenWidth, screenHeight)
 }
 
 
