@@ -326,6 +326,9 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 	session := a.sessionService.GetSession()
 	screenWidth, screenHeight := ebiten.WindowSize()
 	
+	// 強制的な赤い背景で注意を引く
+	screen.Fill(color.RGBA{R: 180, G: 0, B: 0, A: 255})
+	
 	var message string
 	if session.GetSessionType() == domain.Work {
 		message = WorkSessionEndMessage
@@ -333,7 +336,25 @@ func (a *App) drawFullscreenOverlay(screen *ebiten.Image) {
 		message = BreakSessionEndMessage
 	}
 	
-	ebitenutil.DebugPrintAt(screen, message, screenWidth/2-len(message)*3, screenHeight/3)
+	// メッセージを大きく強調表示
+	messageX := screenWidth/2 - len(message)*4
+	messageY := screenHeight/3
+	
+	// 背景の強調ボックス
+	boxWidth := len(message) * 8 + 40
+	boxHeight := 60
+	boxX := screenWidth/2 - boxWidth/2
+	boxY := messageY - 20
+	a.drawRect(screen, boxX, boxY, boxWidth, boxHeight, color.RGBA{R: 255, G: 255, B: 0, A: 200})
+	a.drawBorder(screen, boxX, boxY, boxWidth, boxHeight, color.RGBA{R: 255, G: 255, B: 255, A: 255}, 3)
+	
+	ebitenutil.DebugPrintAt(screen, message, messageX, messageY)
+	
+	// 警告メッセージを追加
+	warningMsg := "YOU CANNOT CONTINUE UNTIL YOU CHOOSE!"
+	warningX := screenWidth/2 - len(warningMsg)*3
+	warningY := screenHeight/2 - 50
+	ebitenutil.DebugPrintAt(screen, warningMsg, warningX, warningY)
 	
 	a.drawButtons(screen)
 }

@@ -99,16 +99,24 @@ func (a *AudioService) PlayStartSound() error {
 }
 
 func (a *AudioService) PlayEndSound() error {
-	a.PlayBeep(600, 150*time.Millisecond)
+	// セッション終了を強力に通知
+	a.PlayBeep(600, 200*time.Millisecond)
 	time.Sleep(50 * time.Millisecond)
-	a.PlayBeep(800, 150*time.Millisecond)
+	a.PlayBeep(800, 200*time.Millisecond)
 	time.Sleep(50 * time.Millisecond)
-	return a.PlayBeep(1000, 200*time.Millisecond)
+	a.PlayBeep(1000, 300*time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
+	// 追加の強調音
+	a.PlayBeep(1200, 400*time.Millisecond)
+	return nil
 }
 
 func (a *AudioService) PlayWarningSound() error {
-	for i := 0; i < 3; i++ {
-		a.PlayBeep(1200, 100*time.Millisecond)
+	// より強力で持続的な警告音を再生
+	for i := 0; i < 5; i++ {
+		a.PlayBeep(1400, 200*time.Millisecond) // 高い周波数で長時間
+		time.Sleep(100 * time.Millisecond)
+		a.PlayBeep(800, 200*time.Millisecond)  // 低い周波数で対比
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil

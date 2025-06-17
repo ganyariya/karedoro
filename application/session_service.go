@@ -65,6 +65,7 @@ func (s *SessionService) Update() {
 	
 	s.session.Update()
 	
+	// 待機状態で警告タイマーが終了したら、強制的に警告を発動
 	if shouldShowWarning && s.session.GetState() == domain.Idle {
 		s.triggerEvent("warning")
 		s.session.ResetWarningTimer()

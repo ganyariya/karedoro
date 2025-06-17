@@ -29,22 +29,22 @@ var (
 )
 
 const (
-	WorkSessionStartMessage    = "Work Session Started!"
-	BreakSessionStartMessage   = "Break Session Started!"
-	WorkSessionEndMessage      = "Pomodoro Complete! Take a break!"
-	BreakSessionEndMessage     = "Break Over! Back to work!"
-	WarningMessage            = "Haven't started next session yet!"
+	WorkSessionStartMessage    = "WORK SESSION STARTED!"
+	BreakSessionStartMessage   = "BREAK SESSION STARTED!"
+	WorkSessionEndMessage      = "POMODORO COMPLETE! You MUST take a break!"
+	BreakSessionEndMessage     = "BREAK OVER! Get back to work NOW!"
+	WarningMessage            = "WARNING! Start your next session!"
 	
-	StartWorkButtonText       = "Start Work Session"
-	StartBreakButtonText      = "Start Break Session"
-	SkipBreakButtonText       = "Skip Break -> Work"
-	PauseButtonText          = "Pause"
-	ResumeButtonText         = "Resume"
+	StartWorkButtonText       = "START WORK SESSION"
+	StartBreakButtonText      = "START BREAK SESSION"
+	SkipBreakButtonText       = "SKIP BREAK -> WORK"
+	PauseButtonText          = "PAUSE"
+	ResumeButtonText         = "RESUME"
 	PausedText               = "PAUSED"
 	
-	IdleScreenMessage         = "Choose your next session:"
-	WorkingText               = "WORKING"
-	BreakText                 = "BREAK TIME"
+	IdleScreenMessage         = "You MUST choose your next session:"
+	WorkingText               = "WORKING - STAY FOCUSED!"
+	BreakText                 = "BREAK TIME - RELAX!"
 	PauseInstructionText      = "Press SPACE to pause"
 	ResumeInstructionText     = "Press SPACE to resume"
 )

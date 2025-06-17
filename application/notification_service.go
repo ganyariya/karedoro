@@ -31,7 +31,7 @@ func (n *NotificationService) ShowWorkSessionStart() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Work Session Started! Time to focus.",
+		"WORK SESSION STARTED! Focus for 25 minutes - NO DISTRACTIONS!",
 		"",
 	)
 }
@@ -43,7 +43,7 @@ func (n *NotificationService) ShowBreakSessionStart() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Break Session Started! Time to relax.",
+		"BREAK SESSION STARTED! Relax for 5 minutes - You earned it!",
 		"",
 	)
 }
@@ -55,7 +55,7 @@ func (n *NotificationService) ShowWorkSessionEnd() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Pomodoro Complete! Take a break!",
+		"POMODORO COMPLETE! You MUST take a break now - No skipping!",
 		"",
 	)
 }
@@ -67,7 +67,7 @@ func (n *NotificationService) ShowBreakSessionEnd() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Break Over! Back to work!",
+		"BREAK OVER! Time to get back to work - Start your session NOW!",
 		"",
 	)
 }
@@ -79,7 +79,7 @@ func (n *NotificationService) ShowWarning() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Haven't started next session yet!",
+		"WARNING! You haven't started your next session! FOLLOW THE POMODORO TECHNIQUE!",
 		"",
 	)
 }
@@ -91,7 +91,7 @@ func (n *NotificationService) ShowSessionPaused() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Session paused.",
+		"Session paused",
 		"",
 	)
 }
@@ -103,7 +103,7 @@ func (n *NotificationService) ShowSessionResumed() error {
 	
 	return beeep.Notify(
 		n.appName,
-		"Session resumed.",
+		"Session resumed",
 		"",
 	)
 }
